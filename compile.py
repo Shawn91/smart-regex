@@ -2,7 +2,7 @@ from collections import deque
 from typing import List, Deque
 
 from operators import OPERATORS
-from data_strucs import Token, Term
+from data_structs import Token, Term
 from utils import count_list_elements
 
 '''
