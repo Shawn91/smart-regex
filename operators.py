@@ -1,7 +1,7 @@
 from collections import deque
 from itertools import product
 
-from data_strucs import Token, Term
+from data_structs import Token, Term
 
 
 def handle_concat(cur_token, exp_tokens, terms_stack, callback):

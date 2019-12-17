@@ -35,18 +35,18 @@ def compile_tokens_to_nested(tokens:List[Token], container_tokens:List=None, nes
             When the container_tokens is [['a', ['c', 'v'], '+']], nested_tokens is ['a', ['c', 'v'], '+']
             When the container_tokens is ['a', ['c', 'v'], '+'], nested_tokens is ['c', 'v']
     Tests:
-    >>> str(compile_tokens_to_nested(convert_pat_str_to_tokens('a\+b')))
-    '[[TEXT:a, TEXT:+, TEXT:b]]'
-    >>> str(compile_tokens_to_nested(convert_pat_str_to_tokens('a(b)c')))
-    '[[TEXT:a, [TEXT:b], TEXT:c]]'
-    >>> str(compile_tokens_to_nested(convert_pat_str_to_tokens('(b)c')))
-    '[[[TEXT:b], TEXT:c]]'
-    >>> str(compile_tokens_to_nested(convert_pat_str_to_tokens('a(b)')))
-    '[[TEXT:a, [TEXT:b]]]'
-    >>> str(compile_tokens_to_nested(convert_pat_str_to_tokens('a(b(c))')))
-    '[[TEXT:a, [TEXT:b, [TEXT:c]]]]'
-    >>> str(compile_tokens_to_nested(convert_pat_str_to_tokens('a(b(c)d)e')))
-    '[[TEXT:a, [TEXT:b, [TEXT:c], TEXT:d], TEXT:e]]'
+    >>> compile_tokens_to_nested(convert_pat_str_to_tokens('a\+b'))
+    [[TEXT:a, TEXT:+, TEXT:b]]
+    >>> compile_tokens_to_nested(convert_pat_str_to_tokens('a(b)c'))
+    [[TEXT:a, [TEXT:b], TEXT:c]]
+    >>> compile_tokens_to_nested(convert_pat_str_to_tokens('(b)c'))
+    [[[TEXT:b], TEXT:c]]
+    >>> compile_tokens_to_nested(convert_pat_str_to_tokens('a(b)'))
+    [[TEXT:a, [TEXT:b]]]
+    >>> compile_tokens_to_nested(convert_pat_str_to_tokens('a(b(c))'))
+    [[TEXT:a, [TEXT:b, [TEXT:c]]]]
+    >>> compile_tokens_to_nested(convert_pat_str_to_tokens('a(b(c)d)e'))
+    [[TEXT:a, [TEXT:b, [TEXT:c], TEXT:d], TEXT:e]]
     """
     if container_tokens is None or nested_tokens is None:
         container_tokens = [[]]
@@ -70,14 +70,16 @@ def compile_tokens_to_nested(tokens:List[Token], container_tokens:List=None, nes
             token_idx += count['ele'] + 2 * (count['list'] + 1)
         elif cur_token.is_right_paren:
             return None
+        elif cur_token.is_alt:
+            pass
 
     return container_tokens
 
 
 if __name__ == '__main__':
     import doctest
-    # doctest.testmod()
+    doctest.testmod()
     # 解决 (b(c)) 不对的问题
-    tokens = convert_pat_str_to_tokens('a\+b')
-    print(compile_tokens_to_nested(tokens))
+    # tokens = convert_pat_str_to_tokens('a\+b')
+    # print(compile_tokens_to_nested(tokens))
 
