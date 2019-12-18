@@ -11,6 +11,9 @@ class Token:
         self.is_right_paren = self.is_operator and self.value == ')'
         self.is_alt = self.is_operator and self.value == '|'
         self.is_escape = self.is_operator and self.value == '\\'
+        self.is_star = self.is_operator and self.value == '*'
+        self.is_plus = self.is_operator and self.value == '+'
+        self.is_qmark = self.is_operator and self.value == '?'
 
     def __repr__(self):
         return self.name + ":" + self.value

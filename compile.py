@@ -1,7 +1,7 @@
 from collections import deque
 from typing import List, Deque
 
-from operators import OPERATORS
+from operators import OPERATORS, concat_two_terms
 from data_structs import Token, Term
 from utils import count_list_elements
 
@@ -26,60 +26,75 @@ def convert_pat_str_to_tokens(pat_str: str) -> List[Token]:
     return tokens_list
 
 
-def compile_tokens_to_nested(tokens:List[Token], container_tokens:List=None, nested_tokens:List=None) -> List[List[Term]]:
+def compile_tokens_to_nested(tokens:List[Token], nested_tokens:List=None) -> List[List[Term]]:
     """
-    Container_tokens is always the direct parent of nested_tokens.
+    todo: a|b should be converted to (a)|(b) first
     Example:
         ['(', 'a', 'b', ')', '|', '(', 'c', '+', 'd', ')', ']': returns [['a', 'b'], ['c', '+', 'd']]
         ['a', '(', 'c', 'v', ')', '+']: returns [['a', ['c', 'v'], '+']].
-            When the container_tokens is [['a', ['c', 'v'], '+']], nested_tokens is ['a', ['c', 'v'], '+']
-            When the container_tokens is ['a', ['c', 'v'], '+'], nested_tokens is ['c', 'v']
     Tests:
     >>> compile_tokens_to_nested(convert_pat_str_to_tokens('a\+b'))
-    [[TEXT:a, TEXT:+, TEXT:b]]
-    >>> compile_tokens_to_nested(convert_pat_str_to_tokens('a(b)c'))
-    [[TEXT:a, [TEXT:b], TEXT:c]]
+    [TEXT:a, TEXT:+, TEXT:b]
+    >>> compile_tokens_to_nested(convert_pat_str_to_tokens('a(b)+c'))
+    [TEXT:a, [TEXT:b], PLUS:+, TEXT:c]
     >>> compile_tokens_to_nested(convert_pat_str_to_tokens('(b)c'))
-    [[[TEXT:b], TEXT:c]]
+    [[TEXT:b], TEXT:c]
     >>> compile_tokens_to_nested(convert_pat_str_to_tokens('a(b)'))
-    [[TEXT:a, [TEXT:b]]]
+    [TEXT:a, [TEXT:b]]
     >>> compile_tokens_to_nested(convert_pat_str_to_tokens('a(b(c))'))
-    [[TEXT:a, [TEXT:b, [TEXT:c]]]]
+    [TEXT:a, [TEXT:b, [TEXT:c]]]
     >>> compile_tokens_to_nested(convert_pat_str_to_tokens('a(b(c)d)e'))
-    [[TEXT:a, [TEXT:b, [TEXT:c], TEXT:d], TEXT:e]]
+    [TEXT:a, [TEXT:b, [TEXT:c], TEXT:d], TEXT:e]
+    >>> compile_tokens_to_nested(convert_pat_str_to_tokens('(a)|(b(c))'))
+    [[TEXT:a], [TEXT:b, [TEXT:c]]]
     """
-    if container_tokens is None or nested_tokens is None:
-        container_tokens = [[]]
-        nested_tokens = container_tokens[-1]
+    if nested_tokens is None:
+        nested_tokens = []
 
     token_idx = 0
 
     while token_idx < len(tokens):
         cur_token = tokens[token_idx]
 
-        if cur_token.is_normal:
-            nested_tokens.append(cur_token)
-            token_idx += 1
-        elif cur_token.is_escape:
+        if cur_token.is_escape:
             cur_token.operator_func(tokens[token_idx:], nested_tokens)
             token_idx += 2
         elif cur_token.is_left_paren:
             nested_tokens.append([])
-            compile_tokens_to_nested(tokens[token_idx+1:], container_tokens=container_tokens, nested_tokens=nested_tokens[-1])
+            compile_tokens_to_nested(tokens[token_idx+1:], nested_tokens=nested_tokens[-1])
             count = count_list_elements(nested_tokens[-1])
             token_idx += count['ele'] + 2 * (count['list'] + 1)
         elif cur_token.is_right_paren:
-            return None
+            return []
         elif cur_token.is_alt:
-            pass
+            nested_tokens.append([])
+            compile_tokens_to_nested(tokens[token_idx+2:], nested_tokens=nested_tokens[-1])
+            count = count_list_elements(nested_tokens[-1])
+            token_idx += count['ele'] + 2 * (count['list'] + 1) + 1
+        else:
+            nested_tokens.append(cur_token)
+            token_idx += 1
 
-    return container_tokens
+    return nested_tokens
+
+def compile_nested_tokens_to_terms(nested_tokens):
+    token_idx = 0
+    terms_list = []
+    while token_idx < len(nested_tokens):
+        cur_token = nested_tokens[token_idx]
+        if isinstance(cur_token, Token):
+            if cur_token.is_normal:
+                if token_idx == 0:
+                    terms_list.append(cur_token.to_term())
+                else:
+                    terms_list[-1] = concat_two_terms(terms_list[-1], cur_token.to_term())
+
+
 
 
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-    # 解决 (b(c)) 不对的问题
-    # tokens = convert_pat_str_to_tokens('a\+b')
-    # print(compile_tokens_to_nested(tokens))
+    tokens = convert_pat_str_to_tokens('a(b)+c')
+    print(compile_tokens_to_nested(tokens))
 

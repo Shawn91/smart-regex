@@ -17,6 +17,8 @@ def handle_concat(cur_token, exp_tokens, terms_stack, callback):
     #
     #     terms_stack.append(last_term)
 
+def concat_two_terms(term1, term2):
+    pass
 
 
 def handle_star(exp_tokens, terms_stack, callback):
