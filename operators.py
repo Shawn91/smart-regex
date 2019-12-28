@@ -2,6 +2,7 @@ from collections import deque
 from itertools import product
 
 from data_structs import Token, Term
+from utils import concat_strings_of_two_lists
 
 
 def handle_concat(cur_token, exp_tokens, terms_stack, callback):
@@ -17,8 +18,37 @@ def handle_concat(cur_token, exp_tokens, terms_stack, callback):
     #
     #     terms_stack.append(last_term)
 
-def concat_two_terms(term1, term2):
-    pass
+def concat_two_terms(term1: Term, term2: Term):
+    new_term = Term(term1.tokens+term2.tokens)
+    new_term.set_emptyable(term1.emptyable and term2.emptyable)
+
+    # set exact of new_term
+    exact = concat_strings_of_two_lists(term1.exact, term2.exact) if term1.exact and term2.exact else set()
+    new_term.set_exact(exact)
+
+    # set prefix of new_term
+    if term1.exact:
+        new_term.set_prefix(concat_strings_of_two_lists(term1.exact, term2.prefix))
+    elif term1.emptyable:
+        new_term.set_prefix(term1.prefix.union(term2.prefix))
+    else:
+        new_term.set_prefix(term1.prefix)
+
+    # set suffix of new_term
+    if term2.exact:
+        new_term.set_suffix(concat_strings_of_two_lists(term1.suffix, term2.exact))
+    elif term2.emptyable:
+        new_term.set_suffix(term1.suffix.union(term2.suffix))
+    else:
+        new_term.set_suffix(term2.suffix)
+
+    # set match of new_term
+    new_term.set_match(term1.match.union(term2.match))
+    return new_term
+
+
+
+
 
 
 def handle_star(exp_tokens, terms_stack, callback):
