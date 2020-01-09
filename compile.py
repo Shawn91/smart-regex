@@ -102,11 +102,11 @@ def compile_tokens_to_expression(tokens: List[Token], debug=False):
         1. match query of the final expression when debug is set to True. Or
         2. final expression and final token index
     >>> compile_tokens_to_expression('a', debug=True)
-    1
+    TRUE
     >>> compile_tokens_to_expression('abcd', debug=True)
-    ab&bc&cd
+    AND(Symbol('ab'), Symbol('bc'), Symbol('cd'))
     >>> compile_tokens_to_expression('a\+b', debug=True)
-    +b&a+
+    AND(Symbol('+b'), Symbol('a+'))
     """
     if isinstance(tokens, str):
         tokens = convert_exp_str_to_tokens(tokens)
@@ -131,7 +131,7 @@ def compile_tokens_to_expression(tokens: List[Token], debug=False):
 
 if __name__ == '__main__':
     import doctest
-    # doctest.testmod()
+    doctest.testmod()
     tokens = convert_exp_str_to_tokens('a\+b')
     nested_tokens = compile_tokens_to_expression(tokens, True)
     print(nested_tokens)

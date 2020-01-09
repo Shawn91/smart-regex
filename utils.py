@@ -1,6 +1,5 @@
 from itertools import product
 from boolean_operations import *
-from data_structs import Token
 
 def count_list_elements(l, count=None):
     """Count the number of elements after flattening a list and the number of nested lists
