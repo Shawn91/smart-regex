@@ -2,7 +2,7 @@ from collections import deque
 from typing import List, Deque
 
 from operators import OPERATORS,  concat_two_exps, handle_alter_two_exps
-from data_structs import Token, Expression
+from data_structs import Token, Expression, create_empty_expression
 from utils import count_list_elements
 
 '''
@@ -84,12 +84,6 @@ def compile_tokens_to_expression(tokens: List[Token], exp: Expression = None) ->
     return exp
 
 
-
-            
-
-
-
-
     #     elif cur_token.is_alt:
     #         nested_tokens.append([])
     #         compile_tokens_to_expression(tokens[token_idx + 2:], nested_tokens=nested_tokens[-1])
@@ -102,56 +96,44 @@ def compile_tokens_to_expression(tokens: List[Token], exp: Expression = None) ->
     # return nested_tokens
 
 
-def compile_tokens_to_expression(tokens: List[Token]):
+def compile_tokens_to_expression(tokens: List[Token], debug=False):
+    """
+    Returns:
+        1. match query of the final expression when debug is set to True. Or
+        2. final expression and final token index
+    >>> compile_tokens_to_expression('a', debug=True)
+    1
+    >>> compile_tokens_to_expression('abcd', debug=True)
+    ab&bc&cd
+    >>> compile_tokens_to_expression('a\+b', debug=True)
+    +b&a+
+    """
+    if isinstance(tokens, str):
+        tokens = convert_exp_str_to_tokens(tokens)
 
-    exp = Expression(exps=[Token(name='TEXT', value='').to_exp()])
+    exp = create_empty_expression()
 
     token_idx = 0
 
     while token_idx < len(tokens):
         cur_token = tokens[token_idx]
         if cur_token.is_normal:
-            last_exp = exp.pop_subexp()
-            last_exp = concat_two_exps(last_exp, cur_token.to_exp())
-            exp.add_subexp(last_exp)
+            exp = concat_two_exps(exp, cur_token.to_exp())
             token_idx += 1
-        elif cur_token.is_alt:
-            alt_exp, token_idx_skipping = compile_nested_tokens_to_exps(tokens[token_idx+1])
-            last_exp = exp.pop_subexp()
-            last_exp = handle_alter_two_exps(last_exp, alt_exp)
-            exp.add_subexp(last_exp)
-            token_idx += token_idx_skipping
 
-
-
+    if debug:
+        return exp.get_match()
     return exp, token_idx
 
 
-def compile_nested_tokens_to_exps(nested_tokens):
-    token_idx = 0
-    exps_list = []
-    while token_idx < len(nested_tokens):
-        cur_token = nested_tokens[token_idx]
-        if isinstance(cur_token, Token):
-            if cur_token.is_normal:
-                if token_idx == 0:
-                    exps_list.append(cur_token.to_exp())
-                else:
-                    exps_list[-1] = concat_two_exps(exps_list[-1], cur_token.to_exp())
-                token_idx += 1
-        else: # cur_token is actually a list of tokens
-            pass
 
-
-
-    return exps_list
 
 
 if __name__ == '__main__':
     import doctest
     # doctest.testmod()
-    tokens = convert_exp_str_to_tokens('a|b')
-    nested_tokens = compile_tokens_to_expression(tokens)
+    tokens = convert_exp_str_to_tokens('a\+b')
+    nested_tokens = compile_tokens_to_expression(tokens, True)
     print(nested_tokens)
     # exps = compile_nested_tokens_to_exps(nested_tokens)
     # print(exps)

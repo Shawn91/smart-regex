@@ -30,14 +30,15 @@ def concat_two_exps(exp1: Expression, exp2: Expression):
     else:
         new_exp.set_suffix(exp2.suffix)
 
-    # set match of new_exp
-    new_exp.set_match(exp1.match & exp2.match)
     return new_exp
 
 
 def handle_alter_two_exps(exp1: Expression, exp2: Expression):
     new_exp = Expression()
     new_exp.set_emptyable(exp1.emptyable or exp2.emptyable)
+
+    # set match of new_exp
+    new_exp.set_match(exp1.match.union(exp2.match))
 
     # set exact of new_exp
     exact = exp1.exact.union(exp2.exact)
@@ -110,4 +111,6 @@ OPERATORS = {
 }
 
 if __name__ == '__main__':
-    concat_two_exps(Expression().get_last_subexp(), Token(name='TEXT', value='a').to_exp())
+    result = concat_two_exps(Token(name='TEXT', value='a').to_exp(), Token(name='TEXT', value='b').to_exp(),)
+    result.match = result.match.simplify()
+    result

@@ -1,5 +1,6 @@
 from itertools import product
 from boolean_operations import *
+from data_structs import Token
 
 def count_list_elements(l, count=None):
     """Count the number of elements after flattening a list and the number of nested lists
@@ -94,6 +95,7 @@ def generate_ngram_chars_logic_exp(str_or_lists, n):
             else:
                 logic_exp = OR(logic_exp, AND(symbols))
     return logic_exp.simplify()
+
 
 
 if __name__ == '__main__':

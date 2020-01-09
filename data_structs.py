@@ -1,8 +1,8 @@
 from collections import Iterable
 from typing import List
 
-
-from utils import generate_ngram_chars, bool_algebra
+from boolean_operations import *
+from utils import generate_ngram_chars, generate_ngram_chars_logic_exp
 from config import NGRAM_FOR_CHINESE, NGRAM_FOR_ENGLISH
 
 
@@ -33,7 +33,7 @@ class Token:
             exp = Expression([self])
             exp.emptyable = False if self.value else True
             exp.exact, exp.prefix, exp.suffix = {self.value}, {self.value}, {self.value}
-            self.match = algebra.symbols('true')
+            self.match = BOOL_TRUE
             return exp
         raise Exception('Only tokens of plain characters could be converted to an expression')
 
@@ -59,8 +59,8 @@ class Expression:
         self.suffix = set()
 
         # match should be a boolean expression. For details, see https://booleanpy.readthedocs.io/en/latest/users_guide.html
-        # Symbol "true" corresponds to "ANY" in https://swtch.com/~rsc/regexp/regexp4.html
-        self.match = algebra.symbols('true')
+        # BOOL_TRUE corresponds to "ANY" in https://swtch.com/~rsc/regexp/regexp4.html
+        self.match = BOOL_TRUE
 
         self.ngram = ngram
         
@@ -89,6 +89,11 @@ class Expression:
     def __repr__(self):
         return ''.join([t.value for t in self.tokens])
 
+    def get_match(self, simplify=True):
+        if simplify:
+            return self.match.simplify()
+        return self.match
+
     def set_ngram(self, n):
         if isinstance(n ,int):
             self.ngram = n
@@ -101,6 +106,7 @@ class Expression:
             self.exact.add(to_be_added)
         elif isinstance(to_be_added, Iterable):
             self.exact.update(to_be_added)
+        self.save_information('exact')
         self.discard_information('exact')
 
     def set_exact(self, exact):
@@ -134,16 +140,19 @@ class Expression:
         attrs_map = {'prefix': self.prefix, 'suffix':self.suffix, 'exact': self.exact}
         if save_info_in is None:
             for attr in attrs_map:
-                self.match.update(generate_ngram_chars(attrs_map[attr], self.ngram))
+                new_match_query = self.match & generate_ngram_chars_logic_exp(attrs_map[attr], self.ngram)
+                self.set_match(new_match_query)
         elif save_info_in in attrs_map:
-            self.match.update(generate_ngram_chars(attrs_map[save_info_in], self.ngram))
+            new_match_query = self.match & generate_ngram_chars_logic_exp(attrs_map[save_info_in], self.ngram)
+            self.set_match(new_match_query)
         else:
             raise Exception('Unknown parameter value.')
 
     def discard_information(self, discard_info_in=None):
         """
         Information discarding methods.
-        See https://swtch.com/~rsc/regexp/regexp4.html for details. Only some methods are implemented.
+        See https://swtch.com/~rsc/regexp/regexp4.html for details. Not all methods are implemented.
+        TODO: Implement more methods in the above article.
         """
         if discard_info_in is None or discard_info_in == 'exact':
             if len(self.exact) > self.EXACT_SET_MAXIMUM_SIZE:
@@ -161,3 +170,5 @@ class Expression:
                 count['leaf_exp'] += 1
         return count
 
+def create_empty_expression():
+    return Token(name='TEXT', value='').to_exp()
