@@ -1,5 +1,5 @@
 from itertools import product
-
+from boolean_operations import *
 
 def count_list_elements(l, count=None):
     """Count the number of elements after flattening a list and the number of nested lists
@@ -19,18 +19,21 @@ def count_list_elements(l, count=None):
     return count
 
 
-def concat_strings_of_two_lists(str_list1, str_list2):
+def concat_strings_in_two_containers(str_container1, str_container2):
     """
-    >>> concat_strings_of_two_lists(['a', 'b'], ['c', 'd'])
+    This function corresponds to the X operator in https://swtch.com/~rsc/regexp/regexp4.html
+    >>> concat_strings_in_two_containers(['a', 'b'], ['c', 'd'])
     ['ac', 'ad', 'bc', 'bd']
-    >>> concat_strings_of_two_lists(['a', 'b'], [])
+    >>> concat_strings_in_two_containers(['a', 'b'], [])
+    ['a', 'b']
+    >>> concat_strings_in_two_containers(['a', 'b'], [''])
     ['a', 'b']
     """
-    if not str_list1:
-        return str_list2
-    if not str_list2:
-        return str_list1
-    product_result = product(str_list1, str_list2)
+    if not str_container1:
+        return str_container2
+    if not str_container2:
+        return str_container1
+    product_result = product(str_container1, str_container2)
     return [''.join(l) for l in product_result]
 
 
@@ -45,19 +48,58 @@ def generate_ngram_chars(string, n):
         return []
     return [string[i:i+n] for i in range(len(string)-n+1)]
 
-def generate_ngram_chars_for_str_set(str_set, n):
+
+def generate_ngram_chars_for_str_lists(str_sets, n):
     """
-    >>> generate_ngram_chars_for_str_set(['ab','abcd'], 3)
+    >>> generate_ngram_chars_for_str_lists(['ab','abcd'], 3)
     [[], ['abc', 'bcd']]
-    >>> generate_ngram_chars_for_str_set(['abcd','xwyz'], 3)
+    >>> generate_ngram_chars_for_str_lists(['abcd','xwyz'], 3)
     [['abc', 'bcd'], ['xwy', 'wyz']]
     """
-    return [generate_ngram_chars(s, n) for s in str_set]
+    return [generate_ngram_chars(s, n) for s in str_sets]
 
+
+def generate_ngram_chars_logic_exp(str_or_lists, n):
+    """Convert a string or a list of strings to ngram logic expression.
+    For details, see https://swtch.com/~rsc/regexp/regexp4.html.
+    >>> generate_ngram_chars_logic_exp('ab', 3)
+    TRUE
+    >>> generate_ngram_chars_logic_exp('abc', 3)
+    Symbol('abc')
+    >>> generate_ngram_chars_logic_exp('abcd', 3)
+    AND(Symbol('abc'), Symbol('bcd'))
+    >>> generate_ngram_chars_logic_exp(['ab'], 3)
+    TRUE
+    >>> generate_ngram_chars_logic_exp(['abcd'], 3)
+    AND(Symbol('abc'), Symbol('bcd'))
+    >>> generate_ngram_chars_logic_exp(['ab', 'abcd'], 3)
+    TRUE
+    >>> generate_ngram_chars_logic_exp(['abcd', 'wxyz'], 3)
+    OR(AND(Symbol('abc'), Symbol('bcd')), AND(Symbol('wxy'), Symbol('xyz')))
+    """
+    if isinstance(str_or_lists, str):
+        str_lists = [generate_ngram_chars(str_or_lists, n)]
+    else:
+        str_lists = generate_ngram_chars_for_str_lists(str_or_lists, n)
+
+
+    logic_exp = BOOL_FALSE
+    for str_list in str_lists:
+        if not str_list:
+            logic_exp = OR(logic_exp, BOOL_TRUE)
+        else:
+            symbols = [bool_symbol(s) for s in str_list]
+            if len(symbols) == 1:
+                logic_exp = OR(logic_exp, symbols[0])
+            else:
+                logic_exp = OR(logic_exp, AND(symbols))
+    return logic_exp.simplify()
 
 
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
 
-    print(generate_ngram_chars_for_str_set(['abcd','xwyz'],3))
+    # print(generate_ngram_chars_for_str_lists(['abcd','xwyz'],3))
+    # print(concat_strings_in_two_containers(['a', 'b'], ['']))
+    print(generate_ngram_chars_logic_exp(['abcd', 'wxyz'], 3))
