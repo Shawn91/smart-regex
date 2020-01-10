@@ -1,7 +1,7 @@
 from collections import deque
 from typing import List, Deque
 
-from operators import OPERATORS,  concat_two_exps, handle_alter_two_exps
+from operators import OPERATORS,  concat_two_exps, concat_exps
 from data_structs import Token, Expression, create_empty_expression
 from utils import count_list_elements
 
@@ -110,22 +110,40 @@ def compile_tokens_to_expression(tokens: List[Token], debug=False):
     """
     if isinstance(tokens, str):
         tokens = convert_exp_str_to_tokens(tokens)
-
     exp = create_empty_expression()
+
+    exp_list = []
 
     token_idx = 0
 
     while token_idx < len(tokens):
         cur_token = tokens[token_idx]
         if cur_token.is_normal:
-            exp = concat_two_exps(exp, cur_token.to_exp())
+            exp_list.append(cur_token.to_exp())
             token_idx += 1
+        elif cur_token.is_plus or cur_token.is_qmark or cur_token.is_star:
+            last_exp = exp_list.pop()
+            last_exp = cur_token.handle_operator(last_exp) # TODO
+            exp_list.append(last_exp)
+            token_idx += 1
+        elif cur_token.is_left_paren:
+            new_exp, num_tokens_to_skip = compile_tokens_to_expression(token_idx[token_idx+1])
+            exp_list.append(new_exp)
+            token_idx += num_tokens_to_skip
+        elif cur_token.is_right_paren:
+            # TODO: calculate how many tokens to skip
+            break
+        elif cur_token.is_alt:
+            exp = concat_exps(exp_list)
+            next_exp = compile_tokens_to_expression(tokens[token_idx+1])
+            exp = handle_alt_exps(exp, next_exp)
+            exp_list = [exp]
+
+    exp = concat_exps(exp_list)
 
     if debug:
         return exp.get_match()
     return exp, token_idx
-
-
 
 
 
