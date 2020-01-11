@@ -1,6 +1,3 @@
-from collections import Iterable
-from typing import List
-
 from boolean_operations import *
 from utils import generate_ngram_chars, generate_ngram_chars_logic_exp
 from config import NGRAM_FOR_CHINESE, NGRAM_FOR_ENGLISH
@@ -38,8 +35,6 @@ class Token:
         raise Exception('Only tokens of plain characters could be converted to an expression')
 
 
-
-
 class Expression:
     """一个 exp 是正则中的一个匹配单位，由 tokens 合并而成
     Examples:
@@ -52,39 +47,18 @@ class Expression:
 
     def __init__(self, tokens=None, exps=None, ngram=NGRAM_FOR_CHINESE):
         self.tokens = [] if tokens is None else tokens  # a list of tokens
-        self.subexps = [] if exps is None else exps # a list of sub expressions
+        self.subexps = [] if exps is None else exps  # a list of sub expressions
         self.emptyable = None
         self.exact = set()  # empty set corresponds to "unknown" in https://swtch.com/~rsc/regexp/regexp4.html
         self.prefix = set()
         self.suffix = set()
 
-        # match should be a boolean expression. For details, see https://booleanpy.readthedocs.io/en/latest/users_guide.html
+        # match should be a boolean expression.
+        # For details, see https://booleanpy.readthedocs.io/en/latest/users_guide.html
         # BOOL_TRUE corresponds to "ANY" in https://swtch.com/~rsc/regexp/regexp4.html
         self.match = BOOL_TRUE
 
         self.ngram = ngram
-        
-
-    def get_last_subexp(self):
-        return self.subexps[-1]
-
-    def pop_subexp(self):
-        return self.subexps.pop()
-
-    def add_subexp(self, subexp):
-        self.subexps.append(subexp)
-
-    def merge_all_subexps(self):
-        """ Merge all sub-expressions into a large one"""
-        new_exp = Expression()
-        new_exp.set_subexps(self.subexps)
-        self.set_subexps([new_exp])
-
-    def set_subexps(self, subexps: List):
-        if not isinstance(subexps, list):
-            raise Exception('subexps parameter accepts a list of expressions.')
-        self.subexps = subexps
-
 
     def __repr__(self):
         return ''.join([t.value for t in self.tokens])
@@ -95,11 +69,10 @@ class Expression:
         return self.match
 
     def set_ngram(self, n):
-        if isinstance(n ,int):
+        if isinstance(n, int):
             self.ngram = n
         else:
             raise Exception('Ngram value must be an int.')
-
 
     def add_to_exact(self, to_be_added):
         if isinstance(to_be_added, str):
@@ -137,7 +110,7 @@ class Expression:
         """Information saving methods.
         See https://swtch.com/~rsc/regexp/regexp4.html for details
         """
-        attrs_map = {'prefix': self.prefix, 'suffix':self.suffix, 'exact': self.exact}
+        attrs_map = {'prefix': self.prefix, 'suffix': self.suffix, 'exact': self.exact}
         if save_info_in is None:
             for attr in attrs_map:
                 new_match_query = self.match & generate_ngram_chars_logic_exp(attrs_map[attr], self.ngram)
@@ -158,17 +131,6 @@ class Expression:
             if len(self.exact) > self.EXACT_SET_MAXIMUM_SIZE:
                 self.exact = set()
 
-    def count_subexps(self, count=None):
-        if count is None:
-            # leaf_exp: an expression with no sub-expressions
-            count = {'leaf_exp': 0, 'non_leaf_exp': 0}
-        for subexp in self.subexps:
-            if subexp.subexp:
-                count['non_leaf_exp'] += 1
-                subexp.count_subexps(count=count)
-            else:
-                count['leaf_exp'] += 1
-        return count
 
 def create_empty_expression():
     return Token(name='TEXT', value='').to_exp()

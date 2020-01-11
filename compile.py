@@ -1,13 +1,10 @@
-from collections import deque
-from typing import List, Deque
+from typing import List
 
-from operators import OPERATORS,  concat_two_exps, concat_exps
+from operators import OPERATORS,  concat_two_exps, concat_exps, handle_alter, handle_star
 from data_structs import Token, Expression, create_empty_expression
-from utils import count_list_elements
 
 '''
 TODO: 1. ESCAPE
-2. A single character's match query is set to ANY. Is it more reasonable to set it to the character it self?
 '''
 
 
@@ -23,7 +20,8 @@ def convert_exp_str_to_tokens(exp_str: str) -> List[Token]:
                 tokens_list.append(Token(name='TEXT', value=exp_str[char_idx + 1]))
                 char_idx += 2
             else:
-                tokens_list.append(Token(name=OPERATORS[char]['name'], value=char))
+                tokens_list.append(Token(name=OPERATORS[char]['name'], value=char,
+                                         operator_func=OPERATORS[char]['handle_func']))
                 char_idx += 1
         else:
             tokens_list.append(Token(name='TEXT', value=char))
@@ -31,72 +29,7 @@ def convert_exp_str_to_tokens(exp_str: str) -> List[Token]:
     return tokens_list
 
 
-
-def compile_tokens_to_expression(tokens: List[Token], exp: Expression = None) -> [Expression, None]:
-    """
-    TODO: a(x|y)|b(c|d) 匹配 a, bc, bd
-    a(b|(c|d))
-    Example:
-        ['(', 'a', 'b', ')', '|', '(', 'c', '+', 'd', ')', ']': returns [['a', 'b'], ['c', '+', 'd']]
-        ['a', '(', 'c', 'v', ')', '+']: returns [['a', ['c', 'v'], '+']].
-    Tests:
-    >>> compile_tokens_to_expression('a\+b')
-    [TEXT:a, TEXT:+, TEXT:b]
-    >>> compile_tokens_to_expression('a(b)+c')
-    [TEXT:a, [TEXT:b], PLUS:+, TEXT:c]
-    >>> compile_tokens_to_expression('(b)c')
-    [[TEXT:b], TEXT:c]
-    >>> compile_tokens_to_expression('a(b)')
-    [TEXT:a, [TEXT:b]]
-    >>> compile_tokens_to_expression('a(b(c))')
-    [TEXT:a, [TEXT:b, [TEXT:c]]]
-    >>> compile_tokens_to_expression('a(b(c)d)e')
-    [TEXT:a, [TEXT:b, [TEXT:c], TEXT:d], TEXT:e]
-    >>> compile_tokens_to_expression('(a)|(b(c))')
-    [[TEXT:a], [TEXT:b, [TEXT:c]]]
-    >>> compile_tokens_to_expression('ab|c')
-    [[TEXT:a, TEXT:b], [TEXT:c]]
-    """
-    if isinstance(tokens, str):
-        tokens = convert_exp_str_to_tokens(tokens)
-
-    if exp is None:
-        exp = Expression()
-
-    token_idx = 0
-
-    while token_idx < len(tokens):
-        cur_token = tokens[token_idx]
-        if cur_token.is_normal:
-            exp.add_subexp(cur_token.to_exp())
-            token_idx += 1
-        elif cur_token.is_left_paren:
-            exp.add_subexp(Expression())
-            compile_tokens_to_expression(tokens[token_idx + 1:], exp=exp.get_last_subexp())
-            subexp_count = exp.get_last_subexp().count_subexps()
-            token_idx += subexp_count['leaf_exp'] + 2 * (subexp_count['non_leaf_exp'] + 1)
-        elif cur_token.is_right_paren:
-            return None
-        elif cur_token.is_alt:
-            exp.merge_all_subexps()
-            in_alt_mode = 1  # now we are going to deal with tokens after "|"
-            token_idx += 1
-    return exp
-
-
-    #     elif cur_token.is_alt:
-    #         nested_tokens.append([])
-    #         compile_tokens_to_expression(tokens[token_idx + 2:], nested_tokens=nested_tokens[-1])
-    #         count = count_list_elements(nested_tokens[-1])
-    #         token_idx += count['ele'] + 2 * (count['list'] + 1) + 1
-    #     else:
-    #         nested_tokens.append(cur_token)
-    #         token_idx += 1
-    #
-    # return nested_tokens
-
-
-def compile_tokens_to_expression(tokens: List[Token], debug=False):
+def compile_tokens_to_expression(tokens: [List[Token], str], debug=False):
     """
     Returns:
         1. match query of the final expression when debug is set to True. Or
@@ -107,10 +40,25 @@ def compile_tokens_to_expression(tokens: List[Token], debug=False):
     AND(Symbol('ab'), Symbol('bc'), Symbol('cd'))
     >>> compile_tokens_to_expression('a\+b', debug=True)
     AND(Symbol('+b'), Symbol('a+'))
+    >>> compile_tokens_to_expression('a(bc)d', debug=True)
+    AND(Symbol('ab'), Symbol('bc'), Symbol('cd'))
+    >>> compile_tokens_to_expression('a(b(c))d', debug=True)
+    AND(Symbol('ab'), Symbol('bc'), Symbol('cd'))
+    >>> compile_tokens_to_expression('ab|(cd|ef)', debug=True)
+    OR(Symbol('ab'), Symbol('cd'), Symbol('ef'))
+    >>> compile_tokens_to_expression('a(b|(c|d))', debug=True)
+    OR(Symbol('ab'), Symbol('ac'), Symbol('ad'))
+    >>> compile_tokens_to_expression('ab|c', debug=True)
+    TRUE
+    >>> compile_tokens_to_expression('a+bc', True)
+    AND(Symbol('ab'), Symbol('bc'))
+    >>> compile_tokens_to_expression('a?bc', True)
+    Symbol('bc')
+    >>> compile_tokens_to_expression('a*bc', True)
+    Symbol('bc')
     """
     if isinstance(tokens, str):
         tokens = convert_exp_str_to_tokens(tokens)
-    exp = create_empty_expression()
 
     exp_list = []
 
@@ -123,20 +71,20 @@ def compile_tokens_to_expression(tokens: List[Token], debug=False):
             token_idx += 1
         elif cur_token.is_plus or cur_token.is_qmark or cur_token.is_star:
             last_exp = exp_list.pop()
-            last_exp = cur_token.handle_operator(last_exp) # TODO
+            last_exp = cur_token.operator_func(last_exp)
             exp_list.append(last_exp)
             token_idx += 1
         elif cur_token.is_left_paren:
-            new_exp, num_tokens_to_skip = compile_tokens_to_expression(token_idx[token_idx+1])
+            new_exp, num_tokens_to_skip = compile_tokens_to_expression(tokens[token_idx+1:])
             exp_list.append(new_exp)
-            token_idx += num_tokens_to_skip
+            token_idx += num_tokens_to_skip + 2
         elif cur_token.is_right_paren:
-            # TODO: calculate how many tokens to skip
             break
         elif cur_token.is_alt:
             exp = concat_exps(exp_list)
-            next_exp = compile_tokens_to_expression(tokens[token_idx+1])
-            exp = handle_alt_exps(exp, next_exp)
+            next_exp, num_tokens_to_skip = compile_tokens_to_expression(tokens[token_idx+1:])
+            exp = handle_alter(exp, next_exp)
+            token_idx += num_tokens_to_skip + 1
             exp_list = [exp]
 
     exp = concat_exps(exp_list)
@@ -146,14 +94,11 @@ def compile_tokens_to_expression(tokens: List[Token], debug=False):
     return exp, token_idx
 
 
-
 if __name__ == '__main__':
     import doctest
-    doctest.testmod()
-    tokens = convert_exp_str_to_tokens('a\+b')
-    nested_tokens = compile_tokens_to_expression(tokens, True)
+    # doctest.testmod()
+    nested_tokens = compile_tokens_to_expression('ab+c', True)
     print(nested_tokens)
+    print((nested_tokens, 1))
     # exps = compile_nested_tokens_to_exps(nested_tokens)
     # print(exps)
-
-

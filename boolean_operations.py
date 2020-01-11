@@ -6,6 +6,7 @@ bool_algebra = boolean.BooleanAlgebra()
 # constants
 BOOL_TRUE, BOOL_FALSE, NOT, _AND, OR, bool_symbol = bool_algebra.definition()
 
+
 def AND(*args):
     """The original AND class in module boolean does not accept a list of symbols/expressions as a parameter.
     This function simply iterates the passed-in list and uses the original AND class on the elements.
@@ -22,5 +23,6 @@ def AND(*args):
     for symbol_idx, symbol in enumerate(args):
         logic_exp = _AND(logic_exp, symbol)
     if not symbol_idx:
-        raise Exception('There should be more than one arguments or the only argument should be a list of length bigger than 1..')
+        raise Exception('There should be more than one arguments \
+                        or the only argument should be a list of length bigger than 1..')
     return logic_exp

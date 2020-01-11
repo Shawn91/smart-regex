@@ -82,6 +82,8 @@ def generate_ngram_chars_logic_exp(str_or_lists, n):
     else:
         str_lists = generate_ngram_chars_for_str_lists(str_or_lists, n)
 
+    if not str_lists:
+        return BOOL_TRUE
 
     logic_exp = BOOL_FALSE
     for str_list in str_lists:
@@ -103,4 +105,4 @@ if __name__ == '__main__':
 
     # print(generate_ngram_chars_for_str_lists(['abcd','xwyz'],3))
     # print(concat_strings_in_two_containers(['a', 'b'], ['']))
-    print(generate_ngram_chars_logic_exp(['abcd', 'wxyz'], 3))
+    print(generate_ngram_chars_logic_exp('a', 3))

@@ -3,12 +3,17 @@ from itertools import product
 
 from data_structs import Token, Expression, create_empty_expression
 from utils import concat_strings_in_two_containers
+from boolean_operations import *
 
 
 
 def concat_two_exps(exp1: Expression, exp2: Expression):
-    new_exp = Expression()
+    new_exp = create_empty_expression()
     new_exp.set_emptyable(exp1.emptyable and exp2.emptyable)
+
+    # set match of new_exp
+    match = AND(exp1.get_match(), exp2.get_match())
+    new_exp.set_match(match)
 
     # set exact of new_exp
     exact = concat_strings_in_two_containers(exp1.exact, exp2.exact) if exp1.exact and exp2.exact else set()
@@ -44,12 +49,13 @@ def concat_exps(exp_list):
     return final_exp
 
 
-def handle_alter_two_exps(exp1: Expression, exp2: Expression):
+def handle_alter(exp1: Expression, exp2: Expression) -> Expression:
     new_exp = Expression()
     new_exp.set_emptyable(exp1.emptyable or exp2.emptyable)
 
     # set match of new_exp
-    new_exp.set_match(exp1.match.union(exp2.match))
+    match = OR(exp1.match, exp2.match)
+    new_exp.set_match(match)
 
     # set exact of new_exp
     exact = exp1.exact.union(exp2.exact)
@@ -61,64 +67,39 @@ def handle_alter_two_exps(exp1: Expression, exp2: Expression):
     # set suffix of new_exp
     new_exp.set_suffix(exp1.suffix.union(exp2.suffix))
 
-    # set match of new_exp
-    new_exp.set_match(exp1.match.union(exp2.match))
     return new_exp
 
 
+def handle_star(exp: Expression) -> Expression:
+    exp.set_emptyable(True)
+    exp.set_exact(set(['']))
+    exp.set_prefix(set(['']))
+    exp.set_suffix(set(['']))
+    exp.set_match(BOOL_TRUE)
+    return exp
 
 
+def handle_qmark(exp: Expression) -> Expression:
+    exp.set_emptyable(True)
+    exp.set_exact(exp.exact.union(set([''])))
+    exp.set_prefix(set(['']))
+    exp.set_suffix(set(['']))
+    exp.set_match(BOOL_TRUE)
+    return exp
 
+def handle_plus(exp: Expression) -> Expression:
+    exp.set_exact(set())
+    return exp
 
-def handle_star(exp_tokens, exps_stack, callback):
-    """cur_token is the star operator"""
-    cur_token = exp_tokens[0]
-    last_exp = exps_stack.pop()
-    last_exp.tokens.append(cur_token)
-    last_exp.emptyable = True
-    last_exp.exact = set()
-    last_exp.prefix = {''}
-    last_exp.suffix = {''}
-    last_exp.match = set()
-    exps_stack.append(last_exp)
-
-
-def handle_qmark(exp_tokens, exps_stack, callback):
-    cur_token = exp_tokens[0]
-    last_exp = exps_stack.pop()
-    last_exp.tokens.append(cur_token)
-    last_exp.emptyable = True
-    last_exp.exact = last_exp.exact.union({''})
-    last_exp.prefix = {''}
-    last_exp.suffix = {''}
-    last_exp.match = set()
-    exps_stack.append(last_exp)
-
-
-def handle_paren(exp_tokens, tokens_list, callback):
-    token_idx = 1
-    while token_idx < len(exp_tokens):
-        cur_token = exp_tokens[token_idx]
-
-
-
-
-
-def handle_escape(exp_tokens, tokens_list):
-    """the first token of exp_tokens is '\'
-    """
-    if exp_tokens[1].is_operator:
-        exp_tokens[1] = Token(name='TEXT', value=exp_tokens[1].value, operator_func=handle_concat)
-        tokens_list.append(exp_tokens[1])
 
 OPERATORS = {
     '(': {'name': 'LEFT_PAREN', 'handle_func': None},
     ')': {'name': 'RIGHT_PAREN', 'handle_func': None},
     '*': {'name': 'STAR', 'handle_func': handle_star},
     '|': {'name': 'ALT', 'handle_func': None},
-    '+': {'name': 'PLUS', 'handle_func': None},
+    '+': {'name': 'PLUS', 'handle_func': handle_plus},
     '?': {'name': 'QMARK', 'handle_func': handle_qmark},
-    '\\': {'name': 'ESCAPE', 'handle_func': handle_escape}
+    '\\': {'name': 'ESCAPE', 'handle_func': None}
 }
 
 if __name__ == '__main__':
