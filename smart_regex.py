@@ -67,7 +67,7 @@ for attr in ["error", "Pattern", "Match", "A", "I", "L", "M", "S", "X", "U",
     globals()[attr] = getattr(re, attr)
 
 if __name__ == '__main__':
-    exp = compile('(abc|cba)def')
+    exp = compile('ab(cd)*ef')
     print(exp.search('abcdef'))
-    print(exp.search('cbadef'))
-    print(exp.search('cbaef'))
+    print(exp.search('abef'))
+    print(exp.search('abcdcdef'))

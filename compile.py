@@ -97,7 +97,7 @@ def compile_tokens_to_expression(tokens: [List[Token], str], debug=False):
 if __name__ == '__main__':
     import doctest
     # doctest.testmod()
-    nested_tokens1 = compile_tokens_to_expression('(a|b)cd', True)
+    nested_tokens1 = compile_tokens_to_expression('(abc*)+de', True)
     print(nested_tokens1)
     print(nested_tokens1.pretty())
     print((nested_tokens1, 1))

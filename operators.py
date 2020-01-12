@@ -72,7 +72,7 @@ def handle_alter(exp1: Expression, exp2: Expression) -> Expression:
 
 def handle_star(exp: Expression) -> Expression:
     exp.set_emptyable(True)
-    exp.set_exact(set(['']))
+    exp.set_exact(set())
     exp.set_prefix(set(['']))
     exp.set_suffix(set(['']))
     exp.set_match(BOOL_TRUE)
