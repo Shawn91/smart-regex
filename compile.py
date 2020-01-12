@@ -97,11 +97,10 @@ def compile_tokens_to_expression(tokens: [List[Token], str], debug=False):
 if __name__ == '__main__':
     import doctest
     # doctest.testmod()
-    nested_tokens1 = compile_tokens_to_expression('abc', True)
-    nested_tokens2 = compile_tokens_to_expression('a(b|c)', True)
-    nested_tokens2 = compile_tokens_to_expression('a(b|c)d|ef(g|h)', True)
+    nested_tokens1 = compile_tokens_to_expression('(a|b)cd', True)
     print(nested_tokens1)
-    # print((nested_tokens, 1))
+    print(nested_tokens1.pretty())
+    print((nested_tokens1, 1))
     # exps = compile_nested_tokens_to_exps(nested_tokens)
     # print(exps)
     # show_args(nested_tokens)

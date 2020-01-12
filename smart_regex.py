@@ -1,13 +1,11 @@
 """
 TODO:
 1. flags
-2. cache n-grams of texts that will be regex-searched against
+2. cache n-grams and expressions
 """
 import re
 
 from compile import compile_tokens_to_expression
-from utils import generate_ngram_chars
-import config
 
 
 def compile(pattern, flags=0):
@@ -61,16 +59,15 @@ def escape(pattern):
 
 def template(pattern, flags=0):
     print("Warning: template function simply invokes the re module's template function without doing nothing else.")
-    return re.compile(pattern, flags|re.RegexFlag.T)
+    return re.compile(pattern, flags | re.RegexFlag.T)
 
 
 for attr in ["error", "Pattern", "Match", "A", "I", "L", "M", "S", "X", "U",
-    "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
-    "UNICODE"]:
+             "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE", "UNICODE"]:
     globals()[attr] = getattr(re, attr)
 
-
 if __name__ == '__main__':
-    exp = compile('a(b|c)')
-    # print(exp.search('ef'))
-    print(globals())
+    exp = compile('(abc|cba)def')
+    print(exp.search('abcdef'))
+    print(exp.search('cbadef'))
+    print(exp.search('cbaef'))

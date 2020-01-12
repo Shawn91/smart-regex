@@ -106,24 +106,38 @@ def needs_regex(ngrams, match_query):
         ngrams = generate_ngram_chars(ngrams, n=config.NGRAM_FOR_CHINESE)
 
     ngrams = set(ngrams)
+    
+    if hasattr(match_query, 'operator') and match_query.args:
+        if match_query.operator == '&':
+            for term in match_query.args:
+                if hasattr(term, 'obj'):
+                    if not term.obj in ngrams:
+                        return False
+                else:
+                    if not needs_regex(ngrams, term):
+                        return False
+            return True
 
-    operator = match_query.operator
-    if operator == '&':
-        return all(symbol.obj in ngrams for symbol in match_query.args)
-    elif operator == '|':
-        return any(symbol.obj in ngrams for symbol in match_query.args)
-    raise Exception('Unknown operator.')
+        if match_query.operator == '|':
+            for term in match_query.args:
+                if hasattr(term, 'obj'):
+                    if term.obj in ngrams:
+                        return True
+                    else:
+                        if needs_regex(ngrams, term):
+                            return True
+                else:
+                    if needs_regex(ngrams, term):
+                        return True
+            return False
+
+    elif hasattr(match_query, 'obj'):
+        return match_query.obj in ngrams
+
+    else:
+        return Exception('Unexpected situation occurred when checking a text should be regex-searched.')
 
 
-def check_pattern_compiled(f):
-    """Use as a decorator to check whether a pattern string is compiled by the re module and set to an Expression
-    before invoking the Expressions's search/match/... methods.
-    """
-    def wrapper(self, *args, **kwargs):
-        if not self.compiled_pattern:
-            raise Exception('Must compile the pattern first.')
-        return f(self, *args, **kwargs)
-    return wrapper
 
 if __name__ == '__main__':
     import doctest

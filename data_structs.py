@@ -1,7 +1,7 @@
 import re
 
 from boolean_operations import *
-from utils import generate_ngram_chars, generate_ngram_chars_logic_exp, needs_regex, check_pattern_compiled
+from utils import generate_ngram_chars_logic_exp, needs_regex
 from config import NGRAM_FOR_CHINESE, NGRAM_FOR_ENGLISH
 
 
@@ -97,7 +97,7 @@ class Expression:
         self.emptyable = emptyable
 
     def set_match(self, match):
-        self.match_query = match
+        self.match_query = match.simplify()
 
     def save_information(self, save_info_in=None):
         """Information saving methods.
@@ -114,15 +114,51 @@ class Expression:
         else:
             raise Exception('Unknown parameter value.')
 
+    def _clear_exact(self):
+        if len(self.exact) > self.EXACT_SET_MAXIMUM_SIZE:
+            self.exact = set()
+
+    def _clean_prefix(self):
+        pass
+        # the below codes are too slow to run
+        # prefix_to_discard = set()
+        # for pre1 in self.prefix:
+        #     for pre2 in self.prefix:
+        #         if pre1 == pre2:
+        #             continue
+        #         if pre2.startswith(pre1):
+        #             prefix_to_discard.add(pre2)
+        # self.prefix = self.prefix - prefix_to_discard
+
+    def _clean_suffix(self):
+        pass
+        # the below codes are too slow to run
+        # suffix_to_discard = set()
+        # for suf1 in self.suffix:
+        #     for suf2 in self.suffix:
+        #         if suf1 == suf2:
+        #             continue
+        #         if suf2.endswith(suf1):
+        #             suffix_to_discard.add(suf2)
+        # self.suffix = self.suffix - suffix_to_discard
+
+
     def discard_information(self, discard_info_in=None):
         """
         Information discarding methods.
         See https://swtch.com/~rsc/regexp/regexp4.html for details. Not all methods are implemented.
         TODO: Implement more methods in the above article.
         """
-        if discard_info_in is None or discard_info_in == 'exact':
-            if len(self.exact) > self.EXACT_SET_MAXIMUM_SIZE:
-                self.exact = set()
+        discard_methods = {'exact': self._clear_exact, 'prefix': self._clean_prefix, 'suffix': self._clean_suffix}
+        if discard_info_in is None:
+            for discard_method in discard_methods.values():
+                discard_method()
+        else:
+            discard_methods[discard_info_in]()
+
+
+
+
 
     @classmethod
     def create_empty_expression(cls):
