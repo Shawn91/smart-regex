@@ -1,18 +1,18 @@
 from collections import deque
 from itertools import product
 
-from data_structs import Token, Expression, create_empty_expression
+from data_structs import Token, Expression
 from utils import concat_strings_in_two_containers
 from boolean_operations import *
 
 
 
 def concat_two_exps(exp1: Expression, exp2: Expression):
-    new_exp = create_empty_expression()
+    new_exp = Expression.create_empty_expression()
     new_exp.set_emptyable(exp1.emptyable and exp2.emptyable)
 
-    # set match of new_exp
-    match = AND(exp1.get_match(), exp2.get_match())
+    # set match_query of new_exp
+    match = AND(exp1.get_match_query(), exp2.get_match_query())
     new_exp.set_match(match)
 
     # set exact of new_exp
@@ -43,7 +43,7 @@ def concat_exps(exp_list):
         raise Exception('Parameter exp_list cannot be an empty list.')
     if len(exp_list) == 1:
         return exp_list[0]
-    final_exp = create_empty_expression()
+    final_exp = Expression.create_empty_expression()
     for exp in exp_list:
         final_exp = concat_two_exps(final_exp, exp)
     return final_exp
@@ -53,8 +53,8 @@ def handle_alter(exp1: Expression, exp2: Expression) -> Expression:
     new_exp = Expression()
     new_exp.set_emptyable(exp1.emptyable or exp2.emptyable)
 
-    # set match of new_exp
-    match = OR(exp1.match, exp2.match)
+    # set match_query of new_exp
+    match = OR(exp1.match_query, exp2.match_query)
     new_exp.set_match(match)
 
     # set exact of new_exp

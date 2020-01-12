@@ -1,7 +1,7 @@
 from typing import List
 
 from operators import OPERATORS,  concat_two_exps, concat_exps, handle_alter, handle_star
-from data_structs import Token, Expression, create_empty_expression
+from data_structs import Token, Expression
 
 '''
 TODO: 1. ESCAPE
@@ -32,7 +32,7 @@ def convert_exp_str_to_tokens(exp_str: str) -> List[Token]:
 def compile_tokens_to_expression(tokens: [List[Token], str], debug=False):
     """
     Returns:
-        1. match query of the final expression when debug is set to True. Or
+        1. match_query query of the final expression when debug is set to True. Or
         2. final expression and final token index
     >>> compile_tokens_to_expression('a', debug=True)
     TRUE
@@ -90,15 +90,18 @@ def compile_tokens_to_expression(tokens: [List[Token], str], debug=False):
     exp = concat_exps(exp_list)
 
     if debug:
-        return exp.get_match()
+        return exp.get_match_query(simplify=True)
     return exp, token_idx
 
 
 if __name__ == '__main__':
     import doctest
     # doctest.testmod()
-    nested_tokens = compile_tokens_to_expression('ab+c', True)
-    print(nested_tokens)
-    print((nested_tokens, 1))
+    nested_tokens1 = compile_tokens_to_expression('abc', True)
+    nested_tokens2 = compile_tokens_to_expression('a(b|c)', True)
+    nested_tokens2 = compile_tokens_to_expression('a(b|c)d|ef(g|h)', True)
+    print(nested_tokens1)
+    # print((nested_tokens, 1))
     # exps = compile_nested_tokens_to_exps(nested_tokens)
     # print(exps)
+    # show_args(nested_tokens)

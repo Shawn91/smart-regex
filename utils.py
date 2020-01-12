@@ -1,5 +1,7 @@
 from itertools import product
+
 from boolean_operations import *
+import config
 
 def count_list_elements(l, count=None):
     """Count the number of elements after flattening a list and the number of nested lists
@@ -98,6 +100,30 @@ def generate_ngram_chars_logic_exp(str_or_lists, n):
     return logic_exp.simplify()
 
 
+def needs_regex(ngrams, match_query):
+    """Given ngrams of a text and a match_query query, check whether this text should be regex-searched against."""
+    if isinstance(ngrams, str):
+        ngrams = generate_ngram_chars(ngrams, n=config.NGRAM_FOR_CHINESE)
+
+    ngrams = set(ngrams)
+
+    operator = match_query.operator
+    if operator == '&':
+        return all(symbol.obj in ngrams for symbol in match_query.args)
+    elif operator == '|':
+        return any(symbol.obj in ngrams for symbol in match_query.args)
+    raise Exception('Unknown operator.')
+
+
+def check_pattern_compiled(f):
+    """Use as a decorator to check whether a pattern string is compiled by the re module and set to an Expression
+    before invoking the Expressions's search/match/... methods.
+    """
+    def wrapper(self, *args, **kwargs):
+        if not self.compiled_pattern:
+            raise Exception('Must compile the pattern first.')
+        return f(self, *args, **kwargs)
+    return wrapper
 
 if __name__ == '__main__':
     import doctest
@@ -105,4 +131,4 @@ if __name__ == '__main__':
 
     # print(generate_ngram_chars_for_str_lists(['abcd','xwyz'],3))
     # print(concat_strings_in_two_containers(['a', 'b'], ['']))
-    print(generate_ngram_chars_logic_exp('a', 3))
+    # print(generate_ngram_chars_logic_exp('a', 3))

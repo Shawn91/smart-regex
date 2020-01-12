@@ -1,11 +1,13 @@
+import re
+
 from boolean_operations import *
-from utils import generate_ngram_chars, generate_ngram_chars_logic_exp
+from utils import generate_ngram_chars, generate_ngram_chars_logic_exp, needs_regex, check_pattern_compiled
 from config import NGRAM_FOR_CHINESE, NGRAM_FOR_ENGLISH
 
 
 
 class Token:
-    """一个 token 就是正则中的一个字符。可以是纯字符，如a; 也可以是一个操作符，如?
+    """A Token is either made from a plain character or an operator like "?"
     """
     def __init__(self, name, value, operator_func=None):
         self.name = name
@@ -36,13 +38,6 @@ class Token:
 
 
 class Expression:
-    """一个 exp 是正则中的一个匹配单位，由 tokens 合并而成
-    Examples:
-        a: a 作为一个 token 也可以是一个 expression
-        a+b: a+b 本身是一个 expression
-        (a+b) | (cd): a+b 和 cd 各是一个 expression
-        a|b: a 和 b 各是一个 expression
-    """
     EXACT_SET_MAXIMUM_SIZE = 100  # clear the exact set when its size goes beyond maximum size to save memory
 
     def __init__(self, tokens=None, exps=None, ngram=NGRAM_FOR_CHINESE):
@@ -53,20 +48,18 @@ class Expression:
         self.prefix = set()
         self.suffix = set()
 
-        # match should be a boolean expression.
+        # match_query should be a boolean expression.
         # For details, see https://booleanpy.readthedocs.io/en/latest/users_guide.html
         # BOOL_TRUE corresponds to "ANY" in https://swtch.com/~rsc/regexp/regexp4.html
-        self.match = BOOL_TRUE
-
+        self.match_query = BOOL_TRUE
         self.ngram = ngram
 
-    def __repr__(self):
-        return ''.join([t.value for t in self.tokens])
+        self.compiled_pattern = None  # regex compiled by the re module
 
-    def get_match(self, simplify=True):
+    def get_match_query(self, simplify=True):
         if simplify:
-            return self.match.simplify()
-        return self.match
+            return self.match_query.simplify()
+        return self.match_query
 
     def set_ngram(self, n):
         if isinstance(n, int):
@@ -104,7 +97,7 @@ class Expression:
         self.emptyable = emptyable
 
     def set_match(self, match):
-        self.match = match
+        self.match_query = match
 
     def save_information(self, save_info_in=None):
         """Information saving methods.
@@ -113,10 +106,10 @@ class Expression:
         attrs_map = {'prefix': self.prefix, 'suffix': self.suffix, 'exact': self.exact}
         if save_info_in is None:
             for attr in attrs_map:
-                new_match_query = self.match & generate_ngram_chars_logic_exp(attrs_map[attr], self.ngram)
+                new_match_query = self.match_query & generate_ngram_chars_logic_exp(attrs_map[attr], self.ngram)
                 self.set_match(new_match_query)
         elif save_info_in in attrs_map:
-            new_match_query = self.match & generate_ngram_chars_logic_exp(attrs_map[save_info_in], self.ngram)
+            new_match_query = self.match_query & generate_ngram_chars_logic_exp(attrs_map[save_info_in], self.ngram)
             self.set_match(new_match_query)
         else:
             raise Exception('Unknown parameter value.')
@@ -131,6 +124,41 @@ class Expression:
             if len(self.exact) > self.EXACT_SET_MAXIMUM_SIZE:
                 self.exact = set()
 
+    @classmethod
+    def create_empty_expression(cls):
+        return Token(name='TEXT', value='').to_exp()
 
-def create_empty_expression():
-    return Token(name='TEXT', value='').to_exp()
+    def set_compiled_pattern(self, pat):
+        self.compiled_pattern = pat
+
+
+RE_FUNCS = {
+    'search': None, 'match': None, 'fullmatch': None,
+    'split': 'string',  # return the original string in default
+    'findall': [], 'finditer': iter(()),
+    'sub': 'string', 'subn': 'string'
+}
+
+def handle_re_func(func_name):
+    if not hasattr(re, func_name):
+        print('Warning: The re module of your Python version does not have the "%s" function. \ '
+              'Unexpected error will be raised when it is invoked' % func_name)
+        return None
+
+    def _re_func(self, string, *args, **kwargs):
+        if not self.compiled_pattern:
+            raise Exception('Must compile the pattern first.')
+
+        if needs_regex(string, self.get_match_query()):
+            return getattr(self.compiled_pattern, func_name)(string, *args, **kwargs)
+
+        # return default value
+        if RE_FUNCS[func_name] == 'string':
+            return string
+        else:
+            return RE_FUNCS[func_name]
+    return _re_func
+
+
+for re_func in RE_FUNCS:
+    setattr(Expression, re_func, handle_re_func(re_func))
