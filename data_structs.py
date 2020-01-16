@@ -3,18 +3,19 @@ import re
 from boolean_operations import *
 from utils import generate_ngram_chars_logic_exp, needs_regex
 from config import NGRAM_FOR_CHINESE, NGRAM_FOR_ENGLISH
-
+from special_chars import SPECIAL_CHARS
 
 
 class Token:
     """A Token is either made from a plain character or an operator like "?"
     """
-    def __init__(self, name, value, operator_func=None):
+    def __init__(self, name='', value='', operator_func=None):
         self.name = name
         self.value = value
         self.operator_func = operator_func  # function for handling operators
-        self.is_operator = self.name != 'TEXT'
-        self.is_normal = self.name == 'TEXT'  # 普通字符
+        self.is_operator = self.name and self.name != 'TEXT'
+        self.is_normal = self.name and self.name == 'TEXT'  # 普通字符
+        self.is_speical_char = False
         self.is_left_paren = self.is_operator and self.value == '('
         self.is_right_paren = self.is_operator and self.value == ')'
         self.is_alt = self.is_operator and self.value == '|'
@@ -35,6 +36,21 @@ class Token:
             self.match = BOOL_TRUE
             return exp
         raise Exception('Only tokens of plain characters could be converted to an expression')
+
+
+class AnyToken(Token):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.is_speical_char = True
+        self.name = SPECIAL_CHARS['.']['name']
+        self.value = '.'
+
+    def to_exp(self):
+        exp = Expression([self])
+        exp.emptyable = False
+        exp.exact, exp.prefix, exp.suffix = set(), set(), set()
+        self.match = BOOL_TRUE
+        return exp
 
 
 class Expression:
@@ -120,28 +136,9 @@ class Expression:
 
     def _clean_prefix(self):
         pass
-        # the below codes are too slow to run
-        # prefix_to_discard = set()
-        # for pre1 in self.prefix:
-        #     for pre2 in self.prefix:
-        #         if pre1 == pre2:
-        #             continue
-        #         if pre2.startswith(pre1):
-        #             prefix_to_discard.add(pre2)
-        # self.prefix = self.prefix - prefix_to_discard
 
     def _clean_suffix(self):
         pass
-        # the below codes are too slow to run
-        # suffix_to_discard = set()
-        # for suf1 in self.suffix:
-        #     for suf2 in self.suffix:
-        #         if suf1 == suf2:
-        #             continue
-        #         if suf2.endswith(suf1):
-        #             suffix_to_discard.add(suf2)
-        # self.suffix = self.suffix - suffix_to_discard
-
 
     def discard_information(self, discard_info_in=None):
         """
@@ -156,10 +153,6 @@ class Expression:
         else:
             discard_methods[discard_info_in]()
 
-
-
-
-
     @classmethod
     def create_empty_expression(cls):
         return Token(name='TEXT', value='').to_exp()
@@ -167,34 +160,100 @@ class Expression:
     def set_compiled_pattern(self, pat):
         self.compiled_pattern = pat
 
+    def extract_indexes(self, inverted_indexes, match_query):
+        """Given inverted_indexes of texts and a match_query query, return indices of the texts and lines that
+        should be regex-searched against.
+        """
+        result_index_set = set()
+        ngrams = inverted_indexes.keys()
+        if hasattr(match_query, 'operator') and match_query.args:
+            if match_query.operator == '&':
+                for term_idx, term in enumerate(match_query.args):
+                    if hasattr(term, 'obj'):
+                        if term.obj not in ngrams:  # term.obj is plain text
+                            return set()
+                        elif result_index_set:
+                            result_index_set.intersection_update(inverted_indexes[term.obj])
+                        elif term_idx == 0 and len(match_query.args) > 1:
+                            result_index_set.update(inverted_indexes[term.obj])
+                        else:
+                            return set()
+                    else:
+                        partial_index_set = self.extract_indexes(inverted_indexes, term)
+                        result_index_set.intersection_update(partial_index_set)
+
+            elif match_query.operator == '|':
+                for term in match_query.args:
+                    if hasattr(term, 'obj'):
+                        result_index_set.update(inverted_indexes.get(term.obj, set()))
+                    else:
+                        partial_index_set = self.extract_indexes(inverted_indexes, term)
+                        result_index_set.update(partial_index_set)
+            return result_index_set
+
+        elif hasattr(match_query, 'obj'):
+            return inverted_indexes.get(match_query.obj, set())
+        
+        elif match_query == BOOL_TRUE:
+            return set(i for s in inverted_indexes.values() for i in s)
+        else:
+            raise Exception('Unexpected situation occurred when checking a text should be regex-searched.')
+
 
 RE_FUNCS = {
     'search': None, 'match': None, 'fullmatch': None,
-    'split': 'string',  # return the original string in default
-    'findall': [], 'finditer': iter(()),
-    'sub': 'string', 'subn': 'string'
+    # 'split': 'string',  # return the original string in default
+    # 'findall': [], 'finditer': iter(()),
+    # 'sub': 'string', 'subn': 'string'
 }
 
 def handle_re_func(func_name):
     if not hasattr(re, func_name):
         print('Warning: The re module of your Python version does not have the "%s" function. \ '
-              'Unexpected error will be raised when it is invoked' % func_name)
+              'Unexpected error will be raised when the function is invoked' % func_name)
         return None
 
-    def _re_func(self, string, *args, **kwargs):
+    def _re_func(self, docs, inverted_indexes, *args, **kwargs):
         if not self.compiled_pattern:
             raise Exception('Must compile the pattern first.')
 
-        if needs_regex(string, self.get_match_query()):
-            return getattr(self.compiled_pattern, func_name)(string, *args, **kwargs)
+        result_indexes = self.extract_indexes(inverted_indexes, self.get_match_query())
+        if result_indexes:
+            result_indexes_strings = []
+            for index in result_indexes:
+                doc_id = index[0]
+                line_id = index[1]
+                line = docs[doc_id][line_id]
+                mat = getattr(self.compiled_pattern, func_name)(line, *args, **kwargs)
+                if mat:
+                    result_indexes_strings.append((doc_id, line_id, mat))
+            return result_indexes_strings
 
-        # return default value
-        if RE_FUNCS[func_name] == 'string':
-            return string
         else:
-            return RE_FUNCS[func_name]
+            return []
     return _re_func
-
 
 for re_func in RE_FUNCS:
     setattr(Expression, re_func, handle_re_func(re_func))
+
+# def handle_re_func(func_name):
+#     if not hasattr(re, func_name):
+#         print('Warning: The re module of your Python version does not have the "%s" function. \ '
+#               'Unexpected error will be raised when the function is invoked' % func_name)
+#         return None
+#
+#     def _re_func(self, string, *args, **kwargs):
+#         if not self.compiled_pattern:
+#             raise Exception('Must compile the pattern first.')
+#
+#         if needs_regex(string, self.get_match_query()):
+#             return getattr(self.compiled_pattern, func_name)(string, *args, **kwargs)
+#
+#         # return default value
+#         if RE_FUNCS[func_name] == 'string':
+#             return string
+#         else:
+#             return RE_FUNCS[func_name]
+#     return _re_func
+
+

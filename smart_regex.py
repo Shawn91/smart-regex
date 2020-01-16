@@ -2,6 +2,7 @@
 TODO:
 1. flags
 2. cache n-grams and expressions
+3. *? non-greedy search
 """
 import re
 
@@ -65,6 +66,21 @@ def template(pattern, flags=0):
 for attr in ["error", "Pattern", "Match", "A", "I", "L", "M", "S", "X", "U",
              "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE", "UNICODE"]:
     globals()[attr] = getattr(re, attr)
+
+
+# 测试用，要删除
+def generate_ngram_chars(string, n):
+    """
+    >>> generate_ngram_chars('I',2)
+    []
+    >>> generate_ngram_chars('abcd',3)
+    ['abc', 'bcd']
+    """
+    if len(string) < n:
+        return []
+    # return [string[i:i+n] for i in range(len(string)-n+1)]
+    for i in range(len(string) - n + 1):
+        yield string[i:i + n]
 
 if __name__ == '__main__':
     exp = compile('ab(cd)*ef')

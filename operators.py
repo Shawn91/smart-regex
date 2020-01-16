@@ -58,7 +58,7 @@ def handle_alter(exp1: Expression, exp2: Expression) -> Expression:
     new_exp.set_match(match)
 
     # set exact of new_exp
-    exact = exp1.exact.union(exp2.exact)
+    exact = exp1.exact.union(exp2.exact) if exp2.exact else set()
     new_exp.set_exact(exact)
 
     # set prefix of new_exp
@@ -101,6 +101,7 @@ OPERATORS = {
     '?': {'name': 'QMARK', 'handle_func': handle_qmark},
     '\\': {'name': 'ESCAPE', 'handle_func': None}
 }
+
 
 if __name__ == '__main__':
     result = concat_two_exps(Token(name='TEXT', value='a').to_exp(), Token(name='TEXT', value='b').to_exp(),)

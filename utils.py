@@ -3,6 +3,9 @@ from itertools import product
 from boolean_operations import *
 import config
 
+
+
+
 def count_list_elements(l, count=None):
     """Count the number of elements after flattening a list and the number of nested lists
     Examples:
@@ -102,11 +105,12 @@ def generate_ngram_chars_logic_exp(str_or_lists, n):
 
 def needs_regex(ngrams, match_query):
     """Given ngrams of a text and a match_query query, check whether this text should be regex-searched against."""
-    if isinstance(ngrams, str):
-        ngrams = generate_ngram_chars(ngrams, n=config.NGRAM_FOR_CHINESE)
+    # if isinstance(ngrams, str):
+    #     ngrams = generate_ngram_chars(ngrams, n=config.NGRAM_FOR_CHINESE)
 
-    ngrams = set(ngrams)
-    
+    if not isinstance(ngrams, set):
+        ngrams = set(ngrams)
+
     if hasattr(match_query, 'operator') and match_query.args:
         if match_query.operator == '&':
             for term in match_query.args:

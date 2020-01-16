@@ -1,7 +1,8 @@
 from typing import List
 
 from operators import OPERATORS,  concat_two_exps, concat_exps, handle_alter, handle_star
-from data_structs import Token, Expression
+from data_structs import Token, AnyToken,Expression
+from special_chars import SPECIAL_CHARS
 
 '''
 TODO: 1. ESCAPE
@@ -23,6 +24,9 @@ def convert_exp_str_to_tokens(exp_str: str) -> List[Token]:
                 tokens_list.append(Token(name=OPERATORS[char]['name'], value=char,
                                          operator_func=OPERATORS[char]['handle_func']))
                 char_idx += 1
+        elif char in SPECIAL_CHARS:
+            tokens_list.append(AnyToken())
+            char_idx += 1
         else:
             tokens_list.append(Token(name='TEXT', value=char))
             char_idx += 1
@@ -33,7 +37,7 @@ def compile_tokens_to_expression(tokens: [List[Token], str], debug=False):
     """
     Returns:
         1. match_query query of the final expression when debug is set to True. Or
-        2. final expression and final token index
+        2. final expression and final token inverted_index
     >>> compile_tokens_to_expression('a', debug=True)
     TRUE
     >>> compile_tokens_to_expression('abcd', debug=True)
@@ -56,6 +60,8 @@ def compile_tokens_to_expression(tokens: [List[Token], str], debug=False):
     Symbol('bc')
     >>> compile_tokens_to_expression('a*bc', True)
     Symbol('bc')
+    >>> compile_tokens_to_expression('ad.+cb',True)
+    AND(Symbol('ad'), Symbol('cb'))
     """
     if isinstance(tokens, str):
         tokens = convert_exp_str_to_tokens(tokens)
@@ -66,7 +72,7 @@ def compile_tokens_to_expression(tokens: [List[Token], str], debug=False):
 
     while token_idx < len(tokens):
         cur_token = tokens[token_idx]
-        if cur_token.is_normal:
+        if cur_token.is_normal or cur_token.is_speical_char:
             exp_list.append(cur_token.to_exp())
             token_idx += 1
         elif cur_token.is_plus or cur_token.is_qmark or cur_token.is_star:
@@ -96,8 +102,8 @@ def compile_tokens_to_expression(tokens: [List[Token], str], debug=False):
 
 if __name__ == '__main__':
     import doctest
-    # doctest.testmod()
-    nested_tokens1 = compile_tokens_to_expression('(abc*)+de', True)
+    doctest.testmod()
+    nested_tokens1 = compile_tokens_to_expression('ad.+cb',True)
     print(nested_tokens1)
     print(nested_tokens1.pretty())
     print((nested_tokens1, 1))
