@@ -34,7 +34,7 @@ def convert_exp_str_to_tokens(exp_str: str) -> List[Token]:
     return tokens_list
 
 
-def compile_tokens_to_expression(tokens: [List[Token], str], debug=False):
+def compile_tokens_to_expression(tokens: [List[Token], str], simplify_match_query=True, debug=False):
     """
     Returns:
         1. match_query query of the final expression when debug is set to True. Or
@@ -98,6 +98,8 @@ def compile_tokens_to_expression(tokens: [List[Token], str], debug=False):
 
     if debug:
         return exp.get_match_query()#.simplify()#(simplify=False)
+    if simplify_match_query:
+        exp.simplify_match()
     return exp, token_idx
 
 
