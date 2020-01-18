@@ -72,9 +72,7 @@ class Expression:
 
         self.compiled_pattern = None  # regex compiled by the re module
 
-    def get_match_query(self, simplify=True):
-        # if simplify:
-        #     return self.match_query.simplify()
+    def get_match_query(self):
         return self.match_query
 
     def set_ngram(self, n):
@@ -113,7 +111,10 @@ class Expression:
         self.emptyable = emptyable
 
     def set_match(self, match):
-        self.match_query = match#.simplify()
+        self.match_query = match
+
+    def simplify_match(self):
+        self.set_match(self.get_match_query().simplify())
 
     def save_information(self, save_info_in=None):
         """Information saving methods.

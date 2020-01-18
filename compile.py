@@ -104,7 +104,14 @@ def compile_tokens_to_expression(tokens: [List[Token], str], debug=False):
 if __name__ == '__main__':
     import doctest,re
     # doctest.testmod()
+    from boolean_operations import AND
+    a = compile_tokens_to_expression('((0|1|2|3|4|5|6|7|8|9) *)+')[0].get_match_query()
+    b = compile_tokens_to_expression('(~|\\|-|\xad–|—|―|－|一|至) *')[0].get_match_query()
+    c = compile_tokens_to_expression('((0|1|2|3|4|5|6|7|8|9) *)+人)')[0].get_match_query()
+    d = AND(a,b,c)
+    print(d.simplify())
     nested_tokens1 = compile_tokens_to_expression('(((0|1|2|3|4|5|6|7|8|9) *)+(~|\\|-|\xad–|—|―|－|一|至) *((0|1|2|3|4|5|6|7|8|9) *)+人)',True)
+    # nested_tokens1.simplify()
     # print(nested_tokens1)
     # print(nested_tokens1.pretty())
     # print((nested_tokens1, 1))
