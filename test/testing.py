@@ -4,6 +4,7 @@ The test data in test_suite.dat is "stolen" from https://github.com/xysun/regex.
 import os, cProfile
 
 import smart_regex as re
+from utils import index_docs
 
 def testing():
     with open('test_suite.dat') as f:
@@ -15,15 +16,18 @@ def testing():
         neg_text = fields[2] if len(fields) == 3 else None
 
         r = re.compile(pattern)
-        mat = r.fullmatch(pos_text)
-        if not mat or mat.group() != pos_text:
+        index = index_docs([[pos_text]])
+        mat = r.fullmatch([[pos_text]], index)
+        if not mat or len(mat) > 1 or mat[0][2].group() != pos_text:
             print('Pattern: %s' % pattern)
             print('Pos text: %s' % pos_text)
+            print(index)
             print('Got mat: %s' % str(None) if not mat else mat.group())
             print('\n')
 
         if neg_text:
-            mat = r.fullmatch(neg_text)
+            index = index_docs([[neg_text]])
+            mat = r.fullmatch([[neg_text]], index)
             if mat:
                 print('Pattern: %s' % pattern)
                 print('Neg text: %s' % neg_text)
@@ -51,8 +55,8 @@ def profile_speed():
             #     re_results.append(mat.group())
 
 
-cProfile.run('profile_speed()')
-# if __name__ == '__main__':
-    # testing()
+# cProfile.run('profile_speed()')
+if __name__ == '__main__':
+    testing()
 
 

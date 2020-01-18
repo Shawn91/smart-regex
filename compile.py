@@ -3,6 +3,7 @@ from typing import List
 from operators import OPERATORS,  concat_two_exps, concat_exps, handle_alter, handle_star
 from data_structs import Token, AnyToken,Expression
 from special_chars import SPECIAL_CHARS
+from boolean_operations import OR
 
 '''
 TODO: 1. ESCAPE
@@ -96,17 +97,24 @@ def compile_tokens_to_expression(tokens: [List[Token], str], debug=False):
     exp = concat_exps(exp_list)
 
     if debug:
-        return exp.get_match_query(simplify=True)
+        return exp.get_match_query()#.simplify()#(simplify=False)
     return exp, token_idx
 
 
 if __name__ == '__main__':
-    import doctest
+    import doctest,re
     doctest.testmod()
-    nested_tokens1 = compile_tokens_to_expression('ad.+cb',True)
-    print(nested_tokens1)
-    print(nested_tokens1.pretty())
-    print((nested_tokens1, 1))
+    # pats = '欧 *阳|独 *孤|令 *狐|皇 *甫|夏 *侯|呼 *延|诸 *葛|完 *颜|拓 *跋|公 *孙|宇 *文|北 *野|欧 *文|上 *官|端 *木|轩 *辕|慕 *蓉|公 *叔|司 *寇|百 *里|司 *马|北 *门|拓 *拔|慕 *容|独 *狐|爱 *新 *觉 *罗|尉 *迟|歐 *陽|叶 *赫 *纳 *拉|兀 *颜|司 *徒|耶 *律|单 *于|西 *门|公 *延|第 *五|令 *孤|北 *堂|蔚 *迟|西 *伯|申 *屠|公 *输'
+    # pats = pats.split('|')
+    # exps = []
+    # for pat in pats:
+    #     exps.append(compile_tokens_to_expression(pat, True))
+    # # Expression().set_match(OR(exps))
+    # print(OR(exps).pretty())
+    # nested_tokens1 = compile_tokens_to_expression('欧 *阳|独 *孤|令 *狐|皇 *甫|夏 *侯|呼 *延|诸 *葛|完 *颜|拓 *跋|公 *孙|宇 *文|北 *野|欧 *文|上 *官|端 *木|轩 *辕|慕 *蓉|公 *叔|司 *寇|百 *里|司 *马|北 *门|拓 *拔|慕 *容|独 *狐|爱 *新 *觉 *罗|尉 *迟|歐 *陽|叶 *赫 *纳 *拉|兀 *颜|司 *徒|耶 *律|单 *于|西 *门|公 *延|第 *五|令 *孤|北 *堂|蔚 *迟|西 *伯|申 *屠|公 *输',True)
+    # print(nested_tokens1.get_match_query())
+    # print(nested_tokens1.pretty())
+    # print((nested_tokens1, 1))
     # exps = compile_nested_tokens_to_exps(nested_tokens)
     # print(exps)
     # show_args(nested_tokens)

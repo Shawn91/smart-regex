@@ -54,7 +54,7 @@ class AnyToken(Token):
 
 
 class Expression:
-    EXACT_SET_MAXIMUM_SIZE = 100  # clear the exact set when its size goes beyond maximum size to save memory
+    EXACT_SET_MAXIMUM_SIZE = 300  # clear the exact set when its size goes beyond maximum size to save memory
 
     def __init__(self, tokens=None, exps=None, ngram=NGRAM_FOR_CHINESE):
         self.tokens = [] if tokens is None else tokens  # a list of tokens
@@ -73,8 +73,8 @@ class Expression:
         self.compiled_pattern = None  # regex compiled by the re module
 
     def get_match_query(self, simplify=True):
-        if simplify:
-            return self.match_query.simplify()
+        # if simplify:
+        #     return self.match_query.simplify()
         return self.match_query
 
     def set_ngram(self, n):
@@ -113,7 +113,7 @@ class Expression:
         self.emptyable = emptyable
 
     def set_match(self, match):
-        self.match_query = match.simplify()
+        self.match_query = match#.simplify()
 
     def save_information(self, save_info_in=None):
         """Information saving methods.
@@ -217,20 +217,26 @@ def handle_re_func(func_name):
         if not self.compiled_pattern:
             raise Exception('Must compile the pattern first.')
 
-        result_indexes = self.extract_indexes(inverted_indexes, self.get_match_query())
-        if result_indexes:
-            result_indexes_strings = []
-            for index in result_indexes:
-                doc_id = index[0]
-                line_id = index[1]
-                line = docs[doc_id][line_id]
-                mat = getattr(self.compiled_pattern, func_name)(line, *args, **kwargs)
-                if mat:
-                    result_indexes_strings.append((doc_id, line_id, mat))
-            return result_indexes_strings
+        result_indexes_strings = []
 
+        if not inverted_indexes:
+            for doc_id, doc in enumerate(docs):
+                for line_id, line in enumerate(doc):
+                    mat = getattr(self.compiled_pattern, func_name)(line, *args, **kwargs)
+                    if mat:
+                        result_indexes_strings.append((doc_id, line_id, mat))
         else:
-            return []
+            result_indexes = self.extract_indexes(inverted_indexes, self.get_match_query())
+            if result_indexes:
+                for index in result_indexes:
+                    doc_id = index[0]
+                    line_id = index[1]
+                    line = docs[doc_id][line_id]
+                    mat = getattr(self.compiled_pattern, func_name)(line, *args, **kwargs)
+                    if mat:
+                        result_indexes_strings.append((doc_id, line_id, mat))
+
+        return result_indexes_strings
     return _re_func
 
 for re_func in RE_FUNCS:

@@ -100,7 +100,18 @@ def generate_ngram_chars_logic_exp(str_or_lists, n):
                 logic_exp = OR(logic_exp, symbols[0])
             else:
                 logic_exp = OR(logic_exp, AND(symbols))
-    return logic_exp.simplify()
+    return logic_exp#.simplify()
+
+
+def index_docs(docs=None):
+    index = {}
+    for doc_idx, doc in enumerate(docs):
+        for line_idx, line in enumerate(doc):
+            for token in generate_ngram_chars(line, config.NGRAM_FOR_CHINESE):
+                if token not in index:
+                    index[token] = set()
+                index[token].add((doc_idx, line_idx))
+    return index
 
 
 def needs_regex(ngrams, match_query):
