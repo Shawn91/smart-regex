@@ -78,12 +78,10 @@ def generate_ngram_chars(string, n):
     """
     if len(string) < n:
         return []
-    # return [string[i:i+n] for i in range(len(string)-n+1)]
-    for i in range(len(string) - n + 1):
-        yield string[i:i + n]
+    return [string[i:i+n] for i in range(len(string)-n+1)]
 
 if __name__ == '__main__':
-    exp = compile('ab(cd)*ef')
-    print(exp.search('abcdef'))
+    exp = compile('欧 *阳|独 *孤|令 *狐|皇 *甫|夏 *侯|呼 *延|诸 *葛|完 *颜|拓 *跋|公 *孙|宇 *文|北 *野|欧 *文|上 *官|端 *木|轩 *辕|慕 *蓉|公 *叔|司 *寇|百 *里|司 *马|北 *门|拓 *拔|慕 *容|独 *狐|爱 *新 *觉 *罗|尉 *迟|歐 *陽|叶 *赫 *纳 *拉|兀 *颜|司 *徒|耶 *律|单 *于|西 *门|公 *延|第 *五|令 *孤|北 *堂|蔚 *迟|西 *伯|申 *屠|公 *输')
+    print(exp.search('欧 阳'))
     print(exp.search('abef'))
     print(exp.search('abcdcdef'))

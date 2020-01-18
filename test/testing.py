@@ -16,18 +16,15 @@ def testing():
         neg_text = fields[2] if len(fields) == 3 else None
 
         r = re.compile(pattern)
-        index = index_docs([[pos_text]])
-        mat = r.fullmatch([[pos_text]], index)
+        mat = r.fullmatch(pos_text)
         if not mat or len(mat) > 1 or mat[0][2].group() != pos_text:
             print('Pattern: %s' % pattern)
             print('Pos text: %s' % pos_text)
-            print(index)
             print('Got mat: %s' % str(None) if not mat else mat.group())
             print('\n')
 
         if neg_text:
-            index = index_docs([[neg_text]])
-            mat = r.fullmatch([[neg_text]], index)
+            mat = r.fullmatch(neg_text)
             if mat:
                 print('Pattern: %s' % pattern)
                 print('Neg text: %s' % neg_text)

@@ -1,7 +1,7 @@
 import re
 
 from boolean_operations import *
-from utils import generate_ngram_chars_logic_exp, needs_regex
+from utils import generate_ngram_chars_logic_exp, needs_regex, index_docs
 from config import NGRAM_FOR_CHINESE, NGRAM_FOR_ENGLISH
 from special_chars import SPECIAL_CHARS
 
@@ -213,28 +213,39 @@ def handle_re_func(func_name):
               'Unexpected error will be raised when the function is invoked' % func_name)
         return None
 
-    def _re_func(self, docs, inverted_indexes, *args, **kwargs):
+    def _re_func(self, docs, inverted_indexes=None, *args, **kwargs):
         if not self.compiled_pattern:
             raise Exception('Must compile the pattern first.')
 
-        result_indexes_strings = []
+        if isinstance(docs, str):
+            docs = [docs.split('\n')]
+            inverted_indexes = index_docs(docs)
 
-        if not inverted_indexes:
+        result_indexes_strings = []
+        use_normal_re = False  # fall back to normal regex search
+
+        if inverted_indexes:
+            try:
+                result_indexes = self.extract_indexes(inverted_indexes, self.get_match_query())
+                if result_indexes:
+                    for index in result_indexes:
+                        doc_id = index[0]
+                        line_id = index[1]
+                        line = docs[doc_id][line_id]
+                        mat = getattr(self.compiled_pattern, func_name)(line, *args, **kwargs)
+                        if mat:
+                            result_indexes_strings.append((doc_id, line_id, mat))
+            except RecursionError:
+                use_normal_re = True
+
+
+        if not inverted_indexes or use_normal_re:
             for doc_id, doc in enumerate(docs):
                 for line_id, line in enumerate(doc):
                     mat = getattr(self.compiled_pattern, func_name)(line, *args, **kwargs)
                     if mat:
                         result_indexes_strings.append((doc_id, line_id, mat))
-        else:
-            result_indexes = self.extract_indexes(inverted_indexes, self.get_match_query())
-            if result_indexes:
-                for index in result_indexes:
-                    doc_id = index[0]
-                    line_id = index[1]
-                    line = docs[doc_id][line_id]
-                    mat = getattr(self.compiled_pattern, func_name)(line, *args, **kwargs)
-                    if mat:
-                        result_indexes_strings.append((doc_id, line_id, mat))
+
 
         return result_indexes_strings
     return _re_func
