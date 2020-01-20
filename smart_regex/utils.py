@@ -1,7 +1,7 @@
 from itertools import product
 
-from boolean_operations import *
-import config
+from .boolean_operations import *
+from . import config
 
 
 
@@ -100,7 +100,7 @@ def generate_ngram_chars_logic_exp(str_or_lists, n):
                 logic_exp = OR(logic_exp, symbols[0])
             else:
                 logic_exp = OR(logic_exp, AND(symbols))
-    return logic_exp#.simplify()
+    return logic_exp.simplify()
 
 
 def index_docs(docs=None):

@@ -1,9 +1,9 @@
 import re
 
-from boolean_operations import *
-from utils import generate_ngram_chars_logic_exp, needs_regex, index_docs
-from config import NGRAM_FOR_CHINESE, NGRAM_FOR_ENGLISH
-from special_chars import SPECIAL_CHARS
+from .boolean_operations import *
+from .utils import generate_ngram_chars_logic_exp, index_docs
+from .config import NGRAM_FOR_CHINESE
+from .special_chars import SPECIAL_CHARS
 
 
 class Token:
@@ -111,7 +111,7 @@ class Expression:
         self.emptyable = emptyable
 
     def set_match(self, match):
-        self.match_query = match
+        self.match_query = match.simplify()
 
     def simplify_match(self):
         self.set_match(self.get_match_query().simplify())
@@ -181,6 +181,8 @@ class Expression:
                             return set()
                     else:
                         partial_index_set = self.extract_indexes(inverted_indexes, term)
+                        if term_idx == 0 and not result_index_set:
+                            result_index_set = set(i for s in inverted_indexes.values() for i in s)
                         result_index_set.intersection_update(partial_index_set)
 
             elif match_query.operator == '|':

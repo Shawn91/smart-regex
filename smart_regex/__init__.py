@@ -6,7 +6,7 @@ TODO:
 """
 import re
 
-from compile import compile_tokens_to_expression
+from .compile import compile_tokens_to_expression
 
 
 def compile(pattern, flags=0):
@@ -81,7 +81,7 @@ def generate_ngram_chars(string, n):
     return [string[i:i+n] for i in range(len(string)-n+1)]
 
 if __name__ == '__main__':
-    exp = compile('ab(cd)?ef')
-    print(exp.search('abcdef'))
+    exp = compile('已 *婚|(已|未)结 *婚')
+    print(exp.fullmatch('已婚'))
     print(exp.search('abef'))
     print(exp.search('abcdcdef'))

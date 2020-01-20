@@ -1,9 +1,6 @@
-from collections import deque
-from itertools import product
-
-from data_structs import Token, Expression
-from utils import concat_strings_in_two_containers
-from boolean_operations import *
+from .data_structs import Token, Expression
+from .utils import concat_strings_in_two_containers
+from .boolean_operations import *
 
 
 

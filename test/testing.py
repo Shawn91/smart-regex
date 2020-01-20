@@ -1,10 +1,12 @@
 """
 The test data in test_suite.dat is "stolen" from https://github.com/xysun/regex.
 """
-import os, cProfile
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import smart_regex as re
-from utils import index_docs
+
 
 def testing():
     with open('test_suite.dat') as f:

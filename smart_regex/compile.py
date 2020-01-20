@@ -1,9 +1,8 @@
 from typing import List
 
-from operators import OPERATORS,  concat_two_exps, concat_exps, handle_alter, handle_star
-from data_structs import Token, AnyToken,Expression
-from special_chars import SPECIAL_CHARS
-from boolean_operations import OR
+from .operators import OPERATORS, concat_exps, handle_alter
+from .data_structs import Token, AnyToken
+from .special_chars import SPECIAL_CHARS
 
 '''
 TODO: 1. ESCAPE
@@ -55,13 +54,13 @@ def compile_tokens_to_expression(tokens: [List[Token], str], simplify_match_quer
     OR(Symbol('ab'), Symbol('ac'), Symbol('ad'))
     >>> compile_tokens_to_expression('ab|c', debug=True)
     TRUE
-    >>> compile_tokens_to_expression('a+bc', True)
+    >>> compile_tokens_to_expression('a+bc', debug=True)
     AND(Symbol('ab'), Symbol('bc'))
-    >>> compile_tokens_to_expression('a?bc', True)
+    >>> compile_tokens_to_expression('a?bc', debug=True)
     Symbol('bc')
-    >>> compile_tokens_to_expression('a*bc', True)
+    >>> compile_tokens_to_expression('a*bc', debug=True)
     Symbol('bc')
-    >>> compile_tokens_to_expression('ad.+cb',True)
+    >>> compile_tokens_to_expression('ad.+cb', debug=True)
     AND(Symbol('ad'), Symbol('cb'))
     """
     if isinstance(tokens, str):
@@ -97,25 +96,24 @@ def compile_tokens_to_expression(tokens: [List[Token], str], simplify_match_quer
     exp = concat_exps(exp_list)
 
     if debug:
-        return exp.get_match_query()#.simplify()#(simplify=False)
+        return exp.get_match_query().simplify()#(simplify=False)
     if simplify_match_query:
         exp.simplify_match()
     return exp, token_idx
 
 
 if __name__ == '__main__':
-    import doctest,re
-    # doctest.testmod()
-    from boolean_operations import AND
-    a = compile_tokens_to_expression('((0|1|2|3|4|5|6|7|8|9) *)+')[0].get_match_query()
-    b = compile_tokens_to_expression('(~|\\|-|\xad–|—|―|－|一|至) *')[0].get_match_query()
-    c = compile_tokens_to_expression('((0|1|2|3|4|5|6|7|8|9) *)+人)')[0].get_match_query()
-    d = AND(a,b,c)
-    print(d.simplify())
-    nested_tokens1 = compile_tokens_to_expression('(((0|1|2|3|4|5|6|7|8|9) *)+(~|\\|-|\xad–|—|―|－|一|至) *((0|1|2|3|4|5|6|7|8|9) *)+人)',True)
-    # nested_tokens1.simplify()
-    # print(nested_tokens1)
-    # print(nested_tokens1.pretty())
+    import doctest
+    doctest.testmod()
+    # from boolean_operations import AND
+    # a = compile_tokens_to_expression('((0|1|2|3|4|5|6|7|8|9) *)+')[0].get_match_query()
+    # b = compile_tokens_to_expression('(~|\\|-|\xad–|—|―|－|一|至) *')[0].get_match_query()
+    # c = compile_tokens_to_expression('((0|1|2|3|4|5|6|7|8|9) *)+人)')[0].get_match_query()
+    # d = AND(a,b,c)
+    # print(d.simplify())
+    nested_tokens1 = compile_tokens_to_expression('(https?://)?(www.)?github[.]com/(^| \||;|.|/)+',debug=True)
+    print(nested_tokens1)
+    print(nested_tokens1.pretty())
     # print((nested_tokens1, 1))
     # exps = compile_nested_tokens_to_exps(nested_tokens)
     # print(exps)
