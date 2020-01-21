@@ -1,8 +1,9 @@
 from typing import List
 
-from .operators import OPERATORS, concat_exps, handle_alter
-from .data_structs import Token, AnyToken
-from .special_chars import SPECIAL_CHARS
+
+from smart_regex.operators import OPERATORS, concat_exps, handle_alter
+from smart_regex.data_structs import Token, AnyToken
+from smart_regex.special_chars import SPECIAL_CHARS
 
 '''
 TODO: 1. ESCAPE
@@ -11,6 +12,9 @@ TODO: 1. ESCAPE
 
 def convert_exp_str_to_tokens(exp_str: str) -> List[Token]:
     # TODO: skip spaces between )/( and | such as in  (ab)  | (cd)
+    """
+    >> convert_exp_str_to_tokens('(ab)  | (cd)')
+    """
 
     char_idx = 0
     tokens_list = []
@@ -20,10 +24,14 @@ def convert_exp_str_to_tokens(exp_str: str) -> List[Token]:
             if char == '\\':
                 tokens_list.append(Token(name='TEXT', value=exp_str[char_idx + 1]))
                 char_idx += 2
-            else:
-                tokens_list.append(Token(name=OPERATORS[char]['name'], value=char,
-                                         operator_func=OPERATORS[char]['handle_func']))
-                char_idx += 1
+                continue
+            elif char == '|':
+                while tokens_list and tokens_list[-1].is_space:
+                    tokens_list.pop()
+
+            tokens_list.append(Token(name=OPERATORS[char]['name'], value=char,
+                                     operator_func=OPERATORS[char]['handle_func']))
+            char_idx += 1
         elif char in SPECIAL_CHARS:
             tokens_list.append(AnyToken())
             char_idx += 1
@@ -111,10 +119,11 @@ if __name__ == '__main__':
     # c = compile_tokens_to_expression('((0|1|2|3|4|5|6|7|8|9) *)+人)')[0].get_match_query()
     # d = AND(a,b,c)
     # print(d.simplify())
-    nested_tokens1 = compile_tokens_to_expression('(https?://)?(www.)?github[.]com/(^| \||;|.|/)+',debug=True)
-    print(nested_tokens1)
-    print(nested_tokens1.pretty())
+    # nested_tokens1 = compile_tokens_to_expression('(https?://)?(www.)?github[.]com/(^| \||;|.|/)+',debug=True)
+    # print(nested_tokens1)
+    # print(nested_tokens1.pretty())
     # print((nested_tokens1, 1))
     # exps = compile_nested_tokens_to_exps(nested_tokens)
     # print(exps)
     # show_args(nested_tokens)
+    print(convert_exp_str_to_tokens('(ab)  | (cd)'))

@@ -1,6 +1,6 @@
-from .data_structs import Token, Expression
-from .utils import concat_strings_in_two_containers
-from .boolean_operations import *
+from smart_regex.data_structs import Token, Expression
+from smart_regex.utils import concat_strings_in_two_containers
+from smart_regex.boolean_operations import *
 
 
 

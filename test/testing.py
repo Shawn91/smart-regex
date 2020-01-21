@@ -3,7 +3,6 @@ The test data in test_suite.dat is "stolen" from https://github.com/xysun/regex.
 """
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import smart_regex as re
 

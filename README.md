@@ -1,1 +1,1 @@
-smart regex
+smart regex 库的主要作用是实现大规模的高速正则表达式搜索。

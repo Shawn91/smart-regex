@@ -6,7 +6,7 @@ TODO:
 """
 import re
 
-from .compile import compile_tokens_to_expression
+from smart_regex.compile import compile_tokens_to_expression
 
 
 def compile(pattern, flags=0):
