@@ -3,6 +3,7 @@ TODO:
 1. flags
 2. cache n-grams and expressions
 3. *? non-greedy search
+4. complete codes for special chars including AnyToken
 """
 import re
 
