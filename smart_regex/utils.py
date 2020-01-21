@@ -6,7 +6,6 @@ import os
 from smart_regex.boolean_operations import *
 from smart_regex import config
 
-SPACES_PAT = re.compile('\s')
 
 def count_list_elements(l, count=None):
     """Count the number of elements after flattening a list and the number of nested lists
@@ -154,9 +153,6 @@ def needs_regex(ngrams, match_query):
     else:
         return Exception('Unexpected situation occurred when checking a text should be regex-searched.')
 
-
-def is_space(s):
-    return SPACES_PAT.fullmatch(s) is not None
 
 
 if __name__ == '__main__':
