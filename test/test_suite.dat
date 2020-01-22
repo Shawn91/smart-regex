@@ -65,3 +65,4 @@ abcd*efg    abcdefg
 a.b  acb  ab
 a.+b  acccb  ab
 ab.c  abdc  abc
+a.?b  ab
