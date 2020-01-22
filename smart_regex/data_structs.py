@@ -1,9 +1,8 @@
 import re
 
 from smart_regex.boolean_operations import *
-from smart_regex.utils import generate_ngram_chars_logic_exp, index_docs, is_space
+from smart_regex.utils import generate_ngram_chars_logic_exp, index_docs
 from smart_regex.config import NGRAM_FOR_CHINESE
-from smart_regex.special_chars import SPECIAL_CHARS
 
 
 class Token:
@@ -15,7 +14,6 @@ class Token:
         self.operator_func = operator_func  # function for handling operators
         self.is_operator = self.name and self.name != 'TEXT'
         self.is_normal = self.name and self.name == 'TEXT'  # 普通字符
-        self.is_space = is_space(value)
         self.is_speical_char = False
         self.is_left_paren = self.is_operator and self.value == '('
         self.is_right_paren = self.is_operator and self.value == ')'
@@ -37,21 +35,6 @@ class Token:
             self.match = BOOL_TRUE
             return exp
         raise Exception('Only tokens of plain characters could be converted to an expression')
-
-
-class AnyToken(Token):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.is_speical_char = True
-        self.name = SPECIAL_CHARS['.']['name']
-        self.value = '.'
-
-    def to_exp(self):
-        exp = Expression([self])
-        exp.emptyable = False
-        exp.exact, exp.prefix, exp.suffix = set(), set(), set()
-        self.match = BOOL_TRUE
-        return exp
 
 
 class Expression:

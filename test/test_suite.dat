@@ -62,3 +62,6 @@ abcd*efg    abcdefg
 (ab|a)  ab
 (a|ab)(b*)  ab
 (ab|a)(b*)  ab
+a.b  acb  ab
+a.+b  acccb  ab
+ab.c  abdc  abc
