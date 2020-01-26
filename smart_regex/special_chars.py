@@ -13,7 +13,7 @@ class AnyToken(Token):
     def to_exp(self):
         exp = Expression([self])
         exp.emptyable = False
-        exp.exact, exp.prefix, exp.suffix = {''}, {''}, {''}
+        exp.exact, exp.prefix, exp.suffix = set(), set(), set()
         self.match = BOOL_TRUE
         return exp
 

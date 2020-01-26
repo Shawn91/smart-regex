@@ -69,7 +69,8 @@ def handle_alter(exp1: Expression, exp2: Expression) -> Expression:
 
 def handle_star(exp: Expression) -> Expression:
     exp.set_emptyable(True)
-    exp.set_exact(exp.exact.union(e*2 for e in exp.exact).union(set([''])))
+    if not exp.converted_from_an_anytoken():
+        exp.set_exact(exp.exact.union(e*2 for e in exp.exact).union(set([''])))
     exp.set_prefix(exp.prefix.union(set([''])))
     exp.set_suffix(exp.suffix.union(set([''])))
     # exp.set_exact(set())
@@ -81,7 +82,8 @@ def handle_star(exp: Expression) -> Expression:
 
 def handle_qmark(exp: Expression) -> Expression:
     exp.set_emptyable(True)
-    exp.set_exact(exp.exact.union(set([''])))
+    if not exp.converted_from_an_anytoken():
+        exp.set_exact(exp.exact.union(set([''])))
     exp.set_prefix(exp.prefix.union(set([''])))
     exp.set_suffix(exp.suffix.union(set([''])))
     # exp.set_prefix(set(['']))
