@@ -66,7 +66,8 @@ def template(pattern, flags=0):
 
 for attr in ["error", "Pattern", "Match", "A", "I", "L", "M", "S", "X", "U",
              "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE", "UNICODE"]:
-    globals()[attr] = getattr(re, attr)
+    if hasattr(re, attr):
+        globals()[attr] = getattr(re, attr)
 
 
 # 测试用，要删除
