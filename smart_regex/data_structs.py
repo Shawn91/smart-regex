@@ -59,6 +59,9 @@ class Expression:
     def get_match_query(self):
         return self.match_query
 
+    def converted_from_an_anytoken(self):
+        return len(self.tokens) == 1 and self.tokens[0].is_speical_char and self.tokens[0].name == 'ANY'
+
     def set_ngram(self, n):
         if isinstance(n, int):
             self.ngram = n
